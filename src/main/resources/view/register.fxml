@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.campus.tracker.controller.RegisterController"
+           stylesheets="@../css/style.css">
+
+    <VBox alignment="CENTER" spacing="18" maxWidth="450" maxHeight="700" styleClass="login-container">
+        <padding>
+            <Insets top="40" right="50" bottom="40" left="50"/>
+        </padding>
+
+        <Label text="Create Account" styleClass="title">
+            <font>
+                <Font name="System Bold" size="32"/>
+            </font>
+        </Label>
+
+        <Label text="Join Trackademia" styleClass="subtitle">
+            <font>
+                <Font size="14"/>
+            </font>
+        </Label>
+
+        <Region prefHeight="15"/>
+
+        <VBox spacing="8">
+            <Label text="Full Name" styleClass="field-label"/>
+            <TextField fx:id="nameField" promptText="Enter your full name" styleClass="input-field" prefHeight="45"/>
+        </VBox>
+
+        <VBox spacing="8">
+            <Label text="Email" styleClass="field-label"/>
+            <TextField fx:id="emailField" promptText="Enter your email" styleClass="input-field" prefHeight="45"/>
+        </VBox>
+
+        <VBox spacing="8">
+            <Label text="Username" styleClass="field-label"/>
+            <TextField fx:id="usernameField" promptText="Choose a username" styleClass="input-field" prefHeight="45"/>
+        </VBox>
+
+        <VBox spacing="8">
+            <Label text="Password" styleClass="field-label"/>
+            <PasswordField fx:id="passwordField" promptText="Choose a password" styleClass="input-field" prefHeight="45"/>
+        </VBox>
+
+        <VBox spacing="8">
+            <Label text="Confirm Password" styleClass="field-label"/>
+            <PasswordField fx:id="confirmPasswordField" promptText="Confirm password" styleClass="input-field" prefHeight="45"/>
+        </VBox>
+
+        <Label fx:id="errorLabel" styleClass="error-label" visible="false" wrapText="true"/>
+
+        <Region prefHeight="10"/>
+
+        <Button text="Register" onAction="#handleRegister"
+                maxWidth="Infinity" styleClass="primary-button" prefHeight="45">
+            <font>
+                <Font size="15" name="System Bold"/>
+            </font>
+        </Button>
+
+        <Button text="Back to Login" onAction="#handleBackToLogin"
+                maxWidth="Infinity" styleClass="secondary-button" prefHeight="42">
+            <font>
+                <Font size="13"/>
+            </font>
+        </Button>
+    </VBox>
+</StackPane>
