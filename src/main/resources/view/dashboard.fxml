@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.campus.tracker.controller.DashboardController"
+            style="-fx-background-color: #f5f5f5;">
+
+    <!-- Header -->
+    <top>
+        <VBox style="-fx-background-color: #1e3a8a; -fx-padding: 20;">
+            <HBox alignment="CENTER_LEFT" spacing="20">
+                <Label fx:id="welcomeLabel" text="Welcome, Student" textFill="white">
+                    <font>
+                        <Font name="System Bold" size="24"/>
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="rollNoLabel" text="Roll No: -" textFill="white">
+                    <font>
+                        <Font size="16"/>
+                    </font>
+                </Label>
+                <Label fx:id="cgpaLabel" text="CGPA: 0.00" textFill="white">
+                    <font>
+                        <Font name="System Bold" size="18"/>
+                    </font>
+                </Label>
+                <Button text="Refresh" onAction="#handleRefresh"
+                        style="-fx-background-color: #3b82f6; -fx-text-fill: white;"/>
+                <Button text="Logout" onAction="#handleLogout"
+                        style="-fx-background-color: #ef4444; -fx-text-fill: white;"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE">
+
+            <!-- Exam Results Tab -->
+            <Tab text="Exam Results">
+                <VBox spacing="15" style="-fx-padding: 20;">
+                    <Label text="Semester Examination Results" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+
+                    <TableView fx:id="examResultsTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colCourseCode" text="Course Code" prefWidth="120"/>
+                            <TableColumn fx:id="colCourseTitle" text="Course Title" prefWidth="400"/>
+                            <TableColumn fx:id="colCredit" text="Credits" prefWidth="80"/>
+                            <TableColumn fx:id="colGrade" text="Grade" prefWidth="80"/>
+                            <TableColumn fx:id="colGradePoint" text="Grade Point" prefWidth="100"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- CA Marks Tab -->
+            <Tab text="CA Marks">
+                <VBox spacing="15" style="-fx-padding: 20;">
+                    <Label text="Continuous Assessment Marks (Provisional)"
+                           style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+
+                    <TableView fx:id="caMarksTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colCACode" text="Course Code" prefWidth="120"/>
+                            <TableColumn fx:id="colCATitle" text="Course Title" prefWidth="350"/>
+                            <TableColumn fx:id="colT1" text="T1" prefWidth="80"/>
+                            <TableColumn fx:id="colT2" text="T2" prefWidth="80"/>
+                            <TableColumn fx:id="colTotal" text="Total" prefWidth="80"/>
+                            <TableColumn fx:id="colConvTotal" text="Conv. Total" prefWidth="100"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+
+                    <Label text="* - Mark entry is pending" style="-fx-font-size: 12; -fx-text-fill: #dc2626;"/>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+
+</BorderPane>

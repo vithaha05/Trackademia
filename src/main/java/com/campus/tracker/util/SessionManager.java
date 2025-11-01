@@ -34,4 +34,7 @@ public class SessionManager {
     public void logout() {
         currentStudent = null;
     }
+    public void clearSession() {
+        this.currentStudent = null;
+    }
 }
