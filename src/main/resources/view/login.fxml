@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.campus.tracker.controller.LoginController"
+           stylesheets="@../css/style.css">
+
+    <VBox alignment="CENTER" spacing="20" maxWidth="450" maxHeight="600" styleClass="login-container">
+        <padding>
+            <Insets top="50" right="50" bottom="50" left="50"/>
+        </padding>
+
+        <!-- Title -->
+        <Label text="Trackademia" styleClass="title" style="-fx-letter-spacing: 2px;">
+            <font>
+                <Font name="System Bold" size="36"/>
+            </font>
+        </Label>
+
+        <Label text="Academic Performance Manager" styleClass="subtitle">
+            <font>
+                <Font size="15"/>
+            </font>
+        </Label>
+
+        <Region prefHeight="40"/>
+
+        <!-- Username Field -->
+        <VBox spacing="8">
+            <Label text="Username" styleClass="field-label"/>
+            <TextField fx:id="usernameField" promptText="Enter username" styleClass="input-field" prefHeight="45"/>
+        </VBox>
+
+        <!-- Password Field -->
+        <VBox spacing="8">
+            <Label text="Password" styleClass="field-label"/>
+            <PasswordField fx:id="passwordField" promptText="Enter password" styleClass="input-field" prefHeight="45"/>
+        </VBox>
+
+        <!-- Error Label -->
+        <Label fx:id="errorLabel" styleClass="error-label" visible="false" wrapText="true"/>
+
+        <Region prefHeight="15"/>
+
+        <!-- Login Button -->
+        <Button fx:id="loginButton" text="Login" onAction="#handleLogin"
+                maxWidth="Infinity" styleClass="primary-button" prefHeight="45">
+            <font>
+                <Font size="15" name="System Bold"/>
+            </font>
+        </Button>
+
+        <!-- Register Button -->
+        <Button text="Create New Account" onAction="#handleRegister"
+                maxWidth="Infinity" styleClass="secondary-button" prefHeight="42">
+            <font>
+                <Font size="14"/>
+            </font>
+        </Button>
+    </VBox>
+</StackPane>
