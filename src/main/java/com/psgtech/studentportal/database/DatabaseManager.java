@@ -15,7 +15,7 @@ public class DatabaseManager {
     // MySQL Connection Details - UPDATE THESE WITH YOUR CREDENTIALS
     private static final String DB_URL = "jdbc:mysql://localhost:3306/psgtech_portal?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String DB_USER = "root";  // Change if you use different username
-    private static final String DB_PASSWORD = "your_password";  // ⚠️ CHANGE THIS TO YOUR MYSQL PASSWORD!
+    private static final String DB_PASSWORD = "qwerty";  // ⚠️ CHANGE THIS TO YOUR MYSQL PASSWORD!
 
     private DatabaseManager() {
         try {
@@ -105,27 +105,27 @@ public class DatabaseManager {
             System.out.println("✅ Table 'courses' created/verified");
 
             // Internal Marks table
-            String createInternalsTable = """
-                CREATE TABLE IF NOT EXISTS internal_marks (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    roll_no VARCHAR(20),
-                    semester INT NOT NULL,
-                    course_code VARCHAR(20) NOT NULL,
-                    course_name VARCHAR(200) NOT NULL,
-                    ca1_marks DECIMAL(5,2),
-                    ca2_marks DECIMAL(5,2),
-                    ca3_marks DECIMAL(5,2),
-                    total_internal_marks DECIMAL(5,2),
-                    max_marks DECIMAL(5,2) DEFAULT 50,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_internal (roll_no, course_code, semester),
-                    FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """;
-            stmt.execute(createInternalsTable);
-            System.out.println("✅ Table 'internal_marks' created/verified");
+            // Update your internal_marks table creation in DatabaseManager.java
+// Find the createTables() method and replace the internal_marks creation with this:
 
+            String createInternalMarksTable = """
+    CREATE TABLE IF NOT EXISTS internal_marks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        roll_no VARCHAR(20) NOT NULL,
+        semester INT NOT NULL,
+        course_code VARCHAR(20) NOT NULL,
+        course_name VARCHAR(255),
+        total_internal_marks DOUBLE,
+        max_marks DOUBLE NOT NULL DEFAULT 50.0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_internal (roll_no, semester, course_code),
+        INDEX idx_rollno (roll_no),
+        INDEX idx_semester (semester)
+    )
+""";
+            stmt.execute(createInternalMarksTable);
+            System.out.println("✅ Table 'internal_marks' created/verified");
             // End Semester Marks table
             String createEndSemMarksTable = """
                 CREATE TABLE IF NOT EXISTS endsem_marks (

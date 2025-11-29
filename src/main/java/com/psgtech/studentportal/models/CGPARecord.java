@@ -1,42 +1,97 @@
 package com.psgtech.studentportal.models;
 
-import java.time.LocalDateTime;
-
 /**
- * CGPA Record Model
+ * CGPA Record for tracking semester-wise GPA and CGPA
  */
-class CGPARecord {
+public class CGPARecord {
     private int id;
     private String rollNo;
     private int semester;
-    private Double gpa;
-    private Double cgpa;
-    private Integer totalCredits;
+    private Double gpa;           // Nullable
+    private Double cgpa;          // Nullable
+    private Integer totalCredits; // Nullable
     private boolean hasBacklogs;
-    private LocalDateTime createdAt;
 
-    // Getters and Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public CGPARecord() {}
 
-    public String getRollNo() { return rollNo; }
-    public void setRollNo(String rollNo) { this.rollNo = rollNo; }
+    public CGPARecord(String rollNo, int semester, Double gpa, Double cgpa,
+                      Integer totalCredits, boolean hasBacklogs) {
+        this.rollNo = rollNo;
+        this.semester = semester;
+        this.gpa = gpa;
+        this.cgpa = cgpa;
+        this.totalCredits = totalCredits;
+        this.hasBacklogs = hasBacklogs;
+    }
 
-    public int getSemester() { return semester; }
-    public void setSemester(int semester) { this.semester = semester; }
+    // Getters
+    public int getId() {
+        return id;
+    }
 
-    public Double getGpa() { return gpa; }
-    public void setGpa(Double gpa) { this.gpa = gpa; }
+    public String getRollNo() {
+        return rollNo;
+    }
 
-    public Double getCgpa() { return cgpa; }
-    public void setCgpa(Double cgpa) { this.cgpa = cgpa; }
+    public int getSemester() {
+        return semester;
+    }
 
-    public Integer getTotalCredits() { return totalCredits; }
-    public void setTotalCredits(Integer totalCredits) { this.totalCredits = totalCredits; }
+    public Double getGpa() {
+        return gpa;
+    }
 
-    public boolean isHasBacklogs() { return hasBacklogs; }
-    public void setHasBacklogs(boolean hasBacklogs) { this.hasBacklogs = hasBacklogs; }
+    public Double getCgpa() {
+        return cgpa;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Integer getTotalCredits() {
+        return totalCredits;
+    }
+
+    public boolean isHasBacklogs() {
+        return hasBacklogs;
+    }
+
+    // Setters
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setRollNo(String rollNo) {
+        this.rollNo = rollNo;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
+    }
+
+    public void setGpa(Double gpa) {
+        this.gpa = gpa;
+    }
+
+    public void setCgpa(Double cgpa) {
+        this.cgpa = cgpa;
+    }
+
+    public void setTotalCredits(Integer totalCredits) {
+        this.totalCredits = totalCredits;
+    }
+
+    public void setHasBacklogs(boolean hasBacklogs) {
+        this.hasBacklogs = hasBacklogs;
+    }
+
+    @Override
+    public String toString() {
+        return "CGPARecord{" +
+                "id=" + id +
+                ", rollNo='" + rollNo + '\'' +
+                ", semester=" + semester +
+                ", gpa=" + gpa +
+                ", cgpa=" + cgpa +
+                ", totalCredits=" + totalCredits +
+                ", hasBacklogs=" + hasBacklogs +
+                '}';
+    }
 }

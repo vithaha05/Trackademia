@@ -1,0 +1,18 @@
+* {
+    -fx-font-family: "System";
+    -fx-font-size: 14;
+}
+
+.root {
+    -fx-background-color: #f5f5f5;
+}
+
+.button {
+    -fx-padding: 10;
+    -fx-font-size: 14;
+}
+
+TextField, PasswordField {
+    -fx-padding: 8;
+    -fx-font-size: 14;
+}

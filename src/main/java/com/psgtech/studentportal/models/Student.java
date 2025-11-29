@@ -1,43 +1,93 @@
 package com.psgtech.studentportal.models;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
- * Student Model
+ * Student Model Class
+ * Represents a student entity in the system
  */
 public class Student {
     private String rollNo;
     private String name;
-    private LocalDate dateOfBirth;
+    private LocalDate dateOfBirth;  // Changed to LocalDate
     private String department;
     private String batch;
-    private int currentSemester;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private int currentSemester;  // Changed to int
 
-    // Getters and Setters
-    public String getRollNo() { return rollNo; }
-    public void setRollNo(String rollNo) { this.rollNo = rollNo; }
+    // Default Constructor
+    public Student() {
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    // Parameterized Constructor
+    public Student(String rollNo, String name, LocalDate dateOfBirth,
+                   String department, String batch, int currentSemester) {
+        this.rollNo = rollNo;
+        this.name = name;
+        this.dateOfBirth = dateOfBirth;
+        this.department = department;
+        this.batch = batch;
+        this.currentSemester = currentSemester;
+    }
 
-    public LocalDate getDateOfBirth() { return dateOfBirth; }
-    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+    // Getters
+    public String getRollNo() {
+        return rollNo;
+    }
 
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { this.department = department; }
+    public String getName() {
+        return name;
+    }
 
-    public String getBatch() { return batch; }
-    public void setBatch(String batch) { this.batch = batch; }
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
 
-    public int getCurrentSemester() { return currentSemester; }
-    public void setCurrentSemester(int currentSemester) { this.currentSemester = currentSemester; }
+    public String getDepartment() {
+        return department;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getBatch() {
+        return batch;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public int getCurrentSemester() {
+        return currentSemester;
+    }
+
+    // Setters
+    public void setRollNo(String rollNo) {
+        this.rollNo = rollNo;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public void setBatch(String batch) {
+        this.batch = batch;
+    }
+
+    public void setCurrentSemester(int currentSemester) {
+        this.currentSemester = currentSemester;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "rollNo='" + rollNo + '\'' +
+                ", name='" + name + '\'' +
+                ", dateOfBirth=" + dateOfBirth +
+                ", department='" + department + '\'' +
+                ", batch='" + batch + '\'' +
+                ", currentSemester=" + currentSemester +
+                '}';
+    }
 }

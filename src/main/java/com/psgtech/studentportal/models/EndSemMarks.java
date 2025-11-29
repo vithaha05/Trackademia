@@ -1,55 +1,120 @@
 package com.psgtech.studentportal.models;
 
-import java.time.LocalDateTime;
-
 /**
- * End Semester Marks Model
+ * End Semester marks for a course
  */
-class EndSemMarks {
+public class EndSemMarks {
     private int id;
     private String rollNo;
     private int semester;
     private String courseCode;
     private String courseName;
-    private Double endsemMarks;
-    private double maxMarks = 100.0;
-    private Double finalMarks;
+    private Double endsemMarks;  // Nullable
+    private double maxMarks;
+    private Double finalMarks;   // Nullable
     private String grade;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
-    // Getters and Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public EndSemMarks() {}
 
-    public String getRollNo() { return rollNo; }
-    public void setRollNo(String rollNo) { this.rollNo = rollNo; }
+    public EndSemMarks(String rollNo, int semester, String courseCode,
+                       String courseName, Double endsemMarks, double maxMarks,
+                       Double finalMarks, String grade) {
+        this.rollNo = rollNo;
+        this.semester = semester;
+        this.courseCode = courseCode;
+        this.courseName = courseName;
+        this.endsemMarks = endsemMarks;
+        this.maxMarks = maxMarks;
+        this.finalMarks = finalMarks;
+        this.grade = grade;
+    }
 
-    public int getSemester() { return semester; }
-    public void setSemester(int semester) { this.semester = semester; }
+    // Getters
+    public int getId() {
+        return id;
+    }
 
-    public String getCourseCode() { return courseCode; }
-    public void setCourseCode(String courseCode) { this.courseCode = courseCode; }
+    public String getRollNo() {
+        return rollNo;
+    }
 
-    public String getCourseName() { return courseName; }
-    public void setCourseName(String courseName) { this.courseName = courseName; }
+    public int getSemester() {
+        return semester;
+    }
 
-    public Double getEndsemMarks() { return endsemMarks; }
-    public void setEndsemMarks(Double endsemMarks) { this.endsemMarks = endsemMarks; }
+    public String getCourseCode() {
+        return courseCode;
+    }
 
-    public double getMaxMarks() { return maxMarks; }
-    public void setMaxMarks(double maxMarks) { this.maxMarks = maxMarks; }
+    public String getCourseName() {
+        return courseName;
+    }
 
-    public Double getFinalMarks() { return finalMarks; }
-    public void setFinalMarks(Double finalMarks) { this.finalMarks = finalMarks; }
+    public Double getEndsemMarks() {
+        return endsemMarks;
+    }
 
-    public String getGrade() { return grade; }
-    public void setGrade(String grade) { this.grade = grade; }
+    public double getMaxMarks() {
+        return maxMarks;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Double getFinalMarks() {
+        return finalMarks;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getGrade() {
+        return grade;
+    }
+
+    // Setters
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setRollNo(String rollNo) {
+        this.rollNo = rollNo;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
+    }
+
+    public void setCourseCode(String courseCode) {
+        this.courseCode = courseCode;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public void setEndsemMarks(Double endsemMarks) {
+        this.endsemMarks = endsemMarks;
+    }
+
+    public void setMaxMarks(double maxMarks) {
+        this.maxMarks = maxMarks;
+    }
+
+    public void setFinalMarks(Double finalMarks) {
+        this.finalMarks = finalMarks;
+    }
+
+    public void setGrade(String grade) {
+        this.grade = grade;
+    }
+
+    @Override
+    public String toString() {
+        return "EndSemMarks{" +
+                "id=" + id +
+                ", rollNo='" + rollNo + '\'' +
+                ", semester=" + semester +
+                ", courseCode='" + courseCode + '\'' +
+                ", courseName='" + courseName + '\'' +
+                ", endsemMarks=" + endsemMarks +
+                ", maxMarks=" + maxMarks +
+                ", finalMarks=" + finalMarks +
+                ", grade='" + grade + '\'' +
+                '}';
+    }
 }
-

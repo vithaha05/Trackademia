@@ -1,135 +1,162 @@
 package com.psgtech.studentportal.controllers;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.concurrent.Task;
-import com.psgtech.studentportal.MainApp;
+import com.psgtech.studentportal.database.DatabaseManager;
+import com.psgtech.studentportal.services.ScraperService;
 import com.psgtech.studentportal.utils.SessionManager;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.stage.Stage;
 
-/**
- * Login Controller
- * Handles user authentication
- */
+import java.io.IOException;
+
 public class LoginController {
 
-    @FXML private TextField rollNoField;
-    @FXML private PasswordField passwordField;
-    @FXML private Button loginButton;
-    @FXML private Label statusLabel;
-    @FXML private ProgressIndicator progressIndicator;
+    @FXML
+    private TextField rollNoField;
 
+    @FXML
+    private PasswordField passwordField;
+
+    @FXML
+    private Label statusLabel;
+
+    @FXML
+    private Button loginButton;
+
+    @FXML
+    private ProgressIndicator loadingIndicator;
+
+    private DatabaseManager databaseManager;
     private SessionManager sessionManager;
 
+    /**
+     * Initialize method called after FXML is loaded
+     */
     @FXML
     public void initialize() {
-        sessionManager = MainApp.getSessionManager();
-        progressIndicator.setVisible(false);
-        statusLabel.setText("");
-
-        System.out.println("✅ Login screen initialized");
-    }
-
-    @FXML
-    private void handleLogin() {
-        String rollNo = rollNoField.getText().trim();
-        String password = passwordField.getText();
-
-        // Validate input
-        if (rollNo.isEmpty() || password.isEmpty()) {
-            statusLabel.setText("❌ Please fill all fields!");
-            statusLabel.setStyle("-fx-text-fill: #F44336;");
-            return;
+        // Hide loading indicator initially
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisible(false);
         }
 
-        // Disable login button and show progress
-        loginButton.setDisable(true);
-        rollNoField.setDisable(true);
-        passwordField.setDisable(true);
-        progressIndicator.setVisible(true);
-        statusLabel.setText("🔐 Logging in...");
-        statusLabel.setStyle("-fx-text-fill: #1976D2;");
+        // Get singleton instances
+        this.databaseManager = DatabaseManager.getInstance();
+        this.sessionManager = SessionManager.getInstance();
 
-        System.out.println("🔐 Attempting login for: " + rollNo);
+        // Set up login button action
+        if (loginButton != null) {
+            loginButton.setOnAction(event -> handleLogin());
+        }
 
-        // Perform login in background thread
-        Task<Boolean> loginTask = new Task<Boolean>() {
-            @Override
-            protected Boolean call() throws Exception {
-                // Login to both portals
-                boolean studzone1Success = sessionManager.loginToStudzone1(rollNo, password);
+        // Allow Enter key to trigger login
+        if (passwordField != null) {
+            passwordField.setOnAction(event -> handleLogin());
+        }
 
-                if (!studzone1Success) {
-                    return false;
-                }
-
-                // If studzone1 succeeds, login to studzone2
-                boolean studzone2Success = sessionManager.loginToStudzone2(rollNo, password);
-
-                return studzone1Success && studzone2Success;
-            }
-        };
-
-        loginTask.setOnSucceeded(event -> {
-            Boolean success = loginTask.getValue();
-
-            if (success) {
-                statusLabel.setText("✅ Login successful! Loading dashboard...");
-                statusLabel.setStyle("-fx-text-fill: #4CAF50;");
-
-                System.out.println("✅ Login successful for: " + rollNo);
-
-                // Small delay to show success message
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                // Navigate to dashboard
-                try {
-                    MainApp.showDashboard();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    statusLabel.setText("❌ Error loading dashboard!");
-                    statusLabel.setStyle("-fx-text-fill: #F44336;");
-                    enableLoginForm();
-                }
-            } else {
-                System.err.println("❌ Login failed for: " + rollNo);
-                statusLabel.setText("❌ Invalid credentials! Please try again.");
-                statusLabel.setStyle("-fx-text-fill: #F44336;");
-                enableLoginForm();
-            }
-        });
-
-        loginTask.setOnFailed(event -> {
-            Throwable exception = loginTask.getException();
-            System.err.println("❌ Login error: " + exception.getMessage());
-            exception.printStackTrace();
-
-            statusLabel.setText("❌ Connection error! Check your internet.");
-            statusLabel.setStyle("-fx-text-fill: #F44336;");
-            enableLoginForm();
-        });
-
-        // Start the task in a new thread
-        new Thread(loginTask).start();
+        System.out.println("✅ Login controller initialized");
     }
 
     /**
-     * Enable login form after error
+     * Handle login button click
      */
-    private void enableLoginForm() {
-        loginButton.setDisable(false);
-        rollNoField.setDisable(false);
-        passwordField.setDisable(false);
-        progressIndicator.setVisible(false);
+    @FXML
+    private void handleLogin() {
+        String rollNo = rollNoField.getText().trim();
+        String password = passwordField.getText().trim();
+
+        // Validation
+        if (rollNo.isEmpty() || password.isEmpty()) {
+            statusLabel.setText("❌ Please enter both roll number and password");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
+
+        // Show loading indicator
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisible(true);
+        }
+        loginButton.setDisable(true);
+        statusLabel.setText("🔄 Logging in and fetching data...");
+        statusLabel.setStyle("-fx-text-fill: blue;");
+
+        // Run scraping in background thread to avoid freezing UI
+        new Thread(() -> {
+            try {
+                // Create scraper and fetch data from portal
+                ScraperService scraper = new ScraperService(databaseManager);
+                boolean scraped = scraper.loginAndFetchData(rollNo, password);
+
+                // Update UI on JavaFX thread
+                Platform.runLater(() -> {
+                    if (loadingIndicator != null) {
+                        loadingIndicator.setVisible(false);
+                    }
+                    loginButton.setDisable(false);
+
+                    if (scraped) {
+                        System.out.println("✅ Data scraped and saved to database");
+                        statusLabel.setText("✅ Login successful!");
+                        statusLabel.setStyle("-fx-text-fill: green;");
+
+                        // Save session using setLoggedInStudent (not login)
+                        sessionManager.setLoggedInStudent(rollNo);
+
+                        // Now load dashboard with fresh data from database
+                        showDashboard(rollNo);
+                    } else {
+                        System.err.println("❌ Could not scrape data from portal");
+                        statusLabel.setText("❌ Invalid credentials or network error");
+                        statusLabel.setStyle("-fx-text-fill: red;");
+                    }
+                });
+
+            } catch (Exception e) {
+                // Update UI on JavaFX thread
+                Platform.runLater(() -> {
+                    if (loadingIndicator != null) {
+                        loadingIndicator.setVisible(false);
+                    }
+                    loginButton.setDisable(false);
+                    statusLabel.setText("❌ Login failed: " + e.getMessage());
+                    statusLabel.setStyle("-fx-text-fill: red;");
+                    e.printStackTrace();
+                });
+            }
+        }).start();
     }
 
+    /**
+     * Show dashboard after successful login
+     */
     @FXML
-    private void handleKeyPress(javafx.scene.input.KeyEvent event) {
-        if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
-            handleLogin();
+    private void showDashboard(String rollNo) {
+        try {
+            Stage stage = (Stage) loginButton.getScene().getWindow();
+
+            // ✅ FIXED PATH for src/main/resources/views/dashboard.fxml
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/dashboard.fxml"));
+            Parent dashboardRoot = loader.load();
+
+            DashboardController controller = loader.getController();
+            controller.initializeWithStudent(rollNo);
+
+            Scene scene = new Scene(dashboardRoot, 1000, 700);
+            stage.setScene(scene);
+            stage.setTitle("Tracademia - Dashboard (" + rollNo + ")");
+            stage.show();
+
+            System.out.println("✅ Dashboard loaded for " + rollNo);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("❌ Dashboard error: " + e.getMessage());
         }
     }
+
+
+
 }

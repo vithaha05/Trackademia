@@ -10,6 +10,7 @@ import java.util.Map;
 /**
  * Session Manager for handling HTTP requests to PSG Tech eCampus
  * Maintains sessions across studzone and studzone2
+ * Also manages local login session
  */
 public class SessionManager {
 
@@ -17,6 +18,7 @@ public class SessionManager {
     private Map<String, String> studzone1Cookies;
     private Map<String, String> studzone2Cookies;
     private String rollNo;
+    private String loggedInStudentRollNo;
     private String studentName;
     private boolean isLoggedIn;
 
@@ -24,10 +26,11 @@ public class SessionManager {
     private static final String STUDZONE2_URL = "https://ecampus.psgtech.ac.in/studzone2/";
     private static final int TIMEOUT = 30000; // 30 seconds timeout
 
-    private SessionManager() {
+    public SessionManager() {
         studzone1Cookies = new HashMap<>();
         studzone2Cookies = new HashMap<>();
         isLoggedIn = false;
+        loggedInStudentRollNo = null;
     }
 
     public static synchronized SessionManager getInstance() {
@@ -35,6 +38,37 @@ public class SessionManager {
             instance = new SessionManager();
         }
         return instance;
+    }
+
+    /**
+     * Set the logged-in student roll number (for local app login)
+     */
+    public void setLoggedInStudent(String rollNo) {
+        this.loggedInStudentRollNo = rollNo;
+        System.out.println("✅ Student logged in: " + rollNo);
+    }
+
+    /**
+     * Get the logged-in student roll number
+     */
+    public String getLoggedInStudentRollNo() {
+        return loggedInStudentRollNo;
+    }
+
+    /**
+     * Check if user is logged in to the app
+     */
+    public boolean isUserLoggedIn() {
+        return loggedInStudentRollNo != null;
+    }
+
+    /**
+     * Logout the user from the app
+     */
+    public void logout() {
+        loggedInStudentRollNo = null;
+        clearSession();
+        System.out.println("✅ User logged out");
     }
 
     /**
@@ -294,7 +328,6 @@ public class SessionManager {
     public String getGreeting() {
         try {
             String name = fetchStudentName();
-            // You can add birthday logic here if needed
             return "Welcome, " + name + "!";
         } catch (IOException e) {
             return "Welcome, Student!";
@@ -367,7 +400,6 @@ public class SessionManager {
     public static void main(String[] args) {
         System.out.println("🧪 Testing Session Manager...\n");
 
-        // Test with dummy credentials (will fail, but tests the flow)
         SessionManager sessionManager = SessionManager.getInstance();
 
         try {
