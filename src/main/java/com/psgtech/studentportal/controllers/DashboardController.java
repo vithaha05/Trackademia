@@ -20,7 +20,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class DashboardController implements Initializable {  // ✅ Added Initializable
+public class DashboardController implements Initializable {
 
     @FXML private Label userLabel;
     @FXML private Label cgpaLabel;
@@ -33,7 +33,7 @@ public class DashboardController implements Initializable {  // ✅ Added Initia
     private DatabaseService databaseService;
     private SessionManager sessionManager;
 
-    @Override  // ✅ FXML-standard initialize (replaces your @FXML initialize())
+    @Override
     public void initialize(URL location, ResourceBundle resources) {
         this.databaseService = new DatabaseService(DatabaseManager.getInstance());
         this.sessionManager = SessionManager.getInstance();
@@ -171,16 +171,36 @@ public class DashboardController implements Initializable {  // ✅ Added Initia
         sessionManager.logout();
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginView.fxml"));
+            // Check 1: Explicitly check for the FXML resource URL
+            final String fxmlPath = "/views/LoginView.fxml";
+            URL loginResource = getClass().getResource(fxmlPath);
+
+            if (loginResource == null) {
+                // If the resource is null, throw an exception with a helpful error message
+                String error = String.format("❌ FXML resource NOT found at path: %s. Please check the file name and location in the 'resources' folder for case-sensitivity.", fxmlPath);
+                System.err.println(error);
+                throw new IOException(error);
+            }
+
+            // FXML resource found, proceed to load
+            System.out.println("✅ FXML resource found at: " + loginResource.toExternalForm());
+            FXMLLoader loader = new FXMLLoader(loginResource);
             Parent loginRoot = loader.load();
             Stage stage = (Stage) logoutButton.getScene().getWindow();
             Scene loginScene = new Scene(loginRoot);
 
             try {
-                String css = getClass().getResource("/css/style.css").toExternalForm();
-                loginScene.getStylesheets().add(css);
+                // Check 2: Verify CSS resource path (Expected: src/main/resources/styles/style.css)
+                final String cssPath = "/styles/style.css";
+                URL cssUrl = getClass().getResource(cssPath);
+
+                if (cssUrl != null) {
+                    loginScene.getStylesheets().add(cssUrl.toExternalForm());
+                } else {
+                    System.out.println("⚠️ Could not load CSS. Path not found: " + cssPath);
+                }
             } catch (Exception e) {
-                System.out.println("⚠️ Could not load CSS: " + e.getMessage());
+                System.out.println("⚠️ Error loading CSS: " + e.getMessage());
             }
 
             stage.setScene(loginScene);
@@ -189,6 +209,7 @@ public class DashboardController implements Initializable {  // ✅ Added Initia
             System.out.println("✅ Login screen displayed");
 
         } catch (IOException e) {
+            // This catches either the FXML resource not found error or any FXMLLoader loading error
             System.err.println("❌ Failed to load login screen: " + e.getMessage());
             e.printStackTrace();
         }

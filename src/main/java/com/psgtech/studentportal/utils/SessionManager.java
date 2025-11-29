@@ -8,9 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Session Manager for handling HTTP requests to PSG Tech eCampus
- * Maintains sessions across studzone and studzone2
- * Also manages local login session
+ * Enhanced Session Manager with proper ASP.NET handling
  */
 public class SessionManager {
 
@@ -21,10 +19,11 @@ public class SessionManager {
     private String loggedInStudentRollNo;
     private String studentName;
     private boolean isLoggedIn;
+    private boolean studzone2Initialized = false;
 
     private static final String STUDZONE1_URL = "https://ecampus.psgtech.ac.in/studzone";
     private static final String STUDZONE2_URL = "https://ecampus.psgtech.ac.in/studzone2/";
-    private static final int TIMEOUT = 30000; // 30 seconds timeout
+    private static final int TIMEOUT = 30000;
 
     public SessionManager() {
         studzone1Cookies = new HashMap<>();
@@ -40,45 +39,29 @@ public class SessionManager {
         return instance;
     }
 
-    /**
-     * Set the logged-in student roll number (for local app login)
-     */
     public void setLoggedInStudent(String rollNo) {
         this.loggedInStudentRollNo = rollNo;
         System.out.println("✅ Student logged in: " + rollNo);
     }
 
-    /**
-     * Get the logged-in student roll number
-     */
     public String getLoggedInStudentRollNo() {
         return loggedInStudentRollNo;
     }
 
-    /**
-     * Check if user is logged in to the app
-     */
     public boolean isUserLoggedIn() {
         return loggedInStudentRollNo != null;
     }
 
-    /**
-     * Logout the user from the app
-     */
     public void logout() {
         loggedInStudentRollNo = null;
         clearSession();
         System.out.println("✅ User logged out");
     }
 
-    /**
-     * Login to Studzone1 (Main Portal - Attendance, Internals, etc.)
-     */
     public boolean loginToStudzone1(String rollNo, String password) throws IOException {
         System.out.println("🔐 Logging into Studzone1...");
 
         try {
-            // Step 1: Get login page to extract CSRF token
             Connection.Response loginPageResponse = Jsoup.connect(STUDZONE1_URL)
                     .method(Connection.Method.GET)
                     .timeout(TIMEOUT)
@@ -92,17 +75,14 @@ public class SessionManager {
                 return false;
             }
 
-            // Store cookies from login page
             studzone1Cookies.putAll(loginPageResponse.cookies());
 
-            // Step 2: Prepare login payload
             Map<String, String> loginData = new HashMap<>();
             loginData.put("rollno", rollNo);
             loginData.put("password", password);
             loginData.put("chkterms", "on");
             loginData.put("__RequestVerificationToken", token);
 
-            // Step 3: Post login credentials
             Connection.Response loginResponse = Jsoup.connect(STUDZONE1_URL)
                     .data(loginData)
                     .cookies(studzone1Cookies)
@@ -111,10 +91,8 @@ public class SessionManager {
                     .followRedirects(true)
                     .execute();
 
-            // Update cookies after login
             studzone1Cookies.putAll(loginResponse.cookies());
 
-            // Step 4: Verify login success by checking for navbar (present only after login)
             Document responsePage = loginResponse.parse();
             boolean success = responsePage.select("nav.navbar.navbar-expand-lg.navbar-light").size() > 0;
 
@@ -123,7 +101,7 @@ public class SessionManager {
                 this.isLoggedIn = true;
                 System.out.println("✅ Studzone1 login successful!");
             } else {
-                System.err.println("❌ Studzone1 login failed - invalid credentials or page structure changed");
+                System.err.println("❌ Studzone1 login failed");
             }
 
             return success;
@@ -134,14 +112,12 @@ public class SessionManager {
         }
     }
 
-    /**
-     * Login to Studzone2 (CGPA Portal - Courses, Grades, Results)
-     */
     public boolean loginToStudzone2(String rollNo, String password) throws IOException {
         System.out.println("🔐 Logging into Studzone2...");
 
         try {
-            // Step 1: Get login page to extract dynamic tokens
+            Thread.sleep(1000);
+
             Connection.Response loginPageResponse = Jsoup.connect(STUDZONE2_URL)
                     .method(Connection.Method.GET)
                     .timeout(TIMEOUT)
@@ -149,21 +125,20 @@ public class SessionManager {
 
             Document loginPage = loginPageResponse.parse();
 
-            // Extract ASP.NET ViewState tokens
             String viewState = loginPage.select("input[name=__VIEWSTATE]").val();
             String viewStateGenerator = loginPage.select("input[name=__VIEWSTATEGENERATOR]").val();
             String eventValidation = loginPage.select("input[name=__EVENTVALIDATION]").val();
             String abcd3 = loginPage.select("input[name=abcd3]").val();
 
             if (viewState == null || viewState.isEmpty()) {
-                System.err.println("❌ Could not extract ViewState tokens from Studzone2 login page");
+                System.err.println("❌ Could not extract ViewState tokens");
                 return false;
             }
 
-            // Store cookies
+            System.out.println("✅ Extracted ViewState tokens");
+
             studzone2Cookies.putAll(loginPageResponse.cookies());
 
-            // Step 2: Prepare login data with all required ASP.NET tokens
             Map<String, String> loginData = new HashMap<>();
             loginData.put("__EVENTTARGET", "");
             loginData.put("__EVENTARGUMENT", "");
@@ -176,7 +151,6 @@ public class SessionManager {
             loginData.put("txtpwdcheck", password);
             loginData.put("abcd3", abcd3);
 
-            // Step 3: Post login
             Connection.Response loginResponse = Jsoup.connect(STUDZONE2_URL)
                     .data(loginData)
                     .cookies(studzone2Cookies)
@@ -185,12 +159,19 @@ public class SessionManager {
                     .followRedirects(true)
                     .execute();
 
-            // Update cookies after login
             studzone2Cookies.putAll(loginResponse.cookies());
+
+            Thread.sleep(1500);
+
+            // Initialize by visiting main page
+            initializeStudzone2Session();
 
             System.out.println("✅ Studzone2 login successful!");
             return true;
 
+        } catch (InterruptedException e) {
+            System.err.println("❌ Thread interrupted during login");
+            throw new IOException("Interrupted", e);
         } catch (IOException e) {
             System.err.println("❌ Network error during Studzone2 login: " + e.getMessage());
             throw e;
@@ -198,11 +179,61 @@ public class SessionManager {
     }
 
     /**
-     * Fetch page from Studzone1 using established session
+     * Initialize Studzone2 session by visiting main page
      */
+    private void initializeStudzone2Session() throws IOException {
+        if (studzone2Initialized) return;
+
+        try {
+            System.out.println("🔄 Initializing Studzone2 session...");
+
+            // Try common landing pages in order
+            String[] possiblePages = {
+                    STUDZONE2_URL + "HomePage.aspx",
+                    STUDZONE2_URL + "FrmEpsStudCourse.aspx",
+                    STUDZONE2_URL + "FrmEpsStudHome.aspx",
+                    STUDZONE2_URL + "AttWfStudCourseSelection.aspx"
+            };
+
+            boolean initialized = false;
+            for (String pageUrl : possiblePages) {
+                try {
+                    Connection.Response response = Jsoup.connect(pageUrl)
+                            .cookies(studzone2Cookies)
+                            .method(Connection.Method.GET)
+                            .timeout(TIMEOUT)
+                            .followRedirects(true)
+                            .ignoreHttpErrors(true)
+                            .execute();
+
+                    if (response.statusCode() == 200) {
+                        studzone2Cookies.putAll(response.cookies());
+                        studzone2Initialized = true;
+                        initialized = true;
+                        System.out.println("✅ Studzone2 session initialized via: " + pageUrl);
+                        break;
+                    }
+                } catch (IOException e) {
+                    // Try next page
+                    continue;
+                }
+            }
+
+            if (!initialized) {
+                System.out.println("⚠️ Could not find valid landing page, proceeding anyway...");
+                studzone2Initialized = true; // Proceed anyway
+            }
+
+            Thread.sleep(1000);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public Document fetchStudzone1Page(String url) throws IOException {
         if (!isLoggedIn) {
-            throw new IllegalStateException("Not logged in to Studzone1. Please login first.");
+            throw new IllegalStateException("Not logged in to Studzone1");
         }
 
         try {
@@ -213,9 +244,7 @@ public class SessionManager {
                     .followRedirects(true)
                     .execute();
 
-            // Update cookies in case they changed
             studzone1Cookies.putAll(response.cookies());
-
             return response.parse();
 
         } catch (IOException e) {
@@ -225,31 +254,64 @@ public class SessionManager {
     }
 
     /**
-     * Fetch page from Studzone2 using established session
+     * Enhanced Studzone2 page fetcher with retry logic
      */
     public Document fetchStudzone2Page(String url) throws IOException {
-        try {
-            Connection.Response response = Jsoup.connect(url)
-                    .cookies(studzone2Cookies)
-                    .method(Connection.Method.GET)
-                    .timeout(TIMEOUT)
-                    .followRedirects(true)
-                    .execute();
+        int maxRetries = 3;
+        int retryCount = 0;
 
-            // Update cookies
-            studzone2Cookies.putAll(response.cookies());
+        while (retryCount < maxRetries) {
+            try {
+                // Ensure session is initialized
+                if (!studzone2Initialized) {
+                    initializeStudzone2Session();
+                }
 
-            return response.parse();
+                Connection.Response response = Jsoup.connect(url)
+                        .cookies(studzone2Cookies)
+                        .method(Connection.Method.GET)
+                        .timeout(TIMEOUT)
+                        .followRedirects(true)
+                        .ignoreHttpErrors(true) // Don't throw on 500
+                        .execute();
 
-        } catch (IOException e) {
-            System.err.println("❌ Error fetching Studzone2 page: " + url);
-            throw e;
+                int statusCode = response.statusCode();
+
+                if (statusCode == 200) {
+                    studzone2Cookies.putAll(response.cookies());
+                    return response.parse();
+                } else if (statusCode == 500 && retryCount < maxRetries - 1) {
+                    System.out.println("⚠️ Got 500 error, retrying after session refresh... (attempt " + (retryCount + 1) + ")");
+                    studzone2Initialized = false;
+                    Thread.sleep(2000);
+                    retryCount++;
+                    continue;
+                } else {
+                    throw new IOException("HTTP error fetching URL. Status=" + statusCode + ", URL=[" + url + "]");
+                }
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while retrying", e);
+            } catch (IOException e) {
+                if (retryCount < maxRetries - 1) {
+                    System.out.println("⚠️ Fetch failed, retrying... (attempt " + (retryCount + 1) + ")");
+                    retryCount++;
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                } else {
+                    System.err.println("❌ Error fetching Studzone2 page: " + url);
+                    throw e;
+                }
+            }
         }
+
+        throw new IOException("Max retries exceeded for: " + url);
     }
 
-    /**
-     * Post data to Studzone1
-     */
     public Document postStudzone1Page(String url, Map<String, String> data) throws IOException {
         if (!isLoggedIn) {
             throw new IllegalStateException("Not logged in to Studzone1");
@@ -273,9 +335,6 @@ public class SessionManager {
         }
     }
 
-    /**
-     * Post data to Studzone2
-     */
     public Document postStudzone2Page(String url, Map<String, String> data) throws IOException {
         try {
             Connection.Response response = Jsoup.connect(url)
@@ -295,9 +354,6 @@ public class SessionManager {
         }
     }
 
-    /**
-     * Get student name from profile page
-     */
     public String fetchStudentName() throws IOException {
         if (studentName != null && !studentName.isEmpty()) {
             return studentName;
@@ -316,15 +372,12 @@ public class SessionManager {
             return studentName;
 
         } catch (IOException e) {
-            System.err.println("❌ Could not fetch student name, using default");
+            System.err.println("❌ Could not fetch student name");
             studentName = "Student";
             return studentName;
         }
     }
 
-    /**
-     * Get personalized greeting with birthday check
-     */
     public String getGreeting() {
         try {
             String name = fetchStudentName();
@@ -334,9 +387,6 @@ public class SessionManager {
         }
     }
 
-    /**
-     * Check if session is still valid by testing a request
-     */
     public boolean isSessionValid() {
         try {
             String testUrl = "https://ecampus.psgtech.ac.in/studzone/Home/Profile";
@@ -347,9 +397,6 @@ public class SessionManager {
         }
     }
 
-    /**
-     * Refresh session if expired
-     */
     public boolean refreshSession(String rollNo, String password) {
         System.out.println("🔄 Refreshing expired session...");
         clearSession();
@@ -361,15 +408,13 @@ public class SessionManager {
         }
     }
 
-    /**
-     * Clear all session data (logout)
-     */
     public void clearSession() {
         studzone1Cookies.clear();
         studzone2Cookies.clear();
         rollNo = null;
         studentName = null;
         isLoggedIn = false;
+        studzone2Initialized = false;
         System.out.println("🔓 Session cleared - logged out");
     }
 
@@ -392,41 +437,5 @@ public class SessionManager {
 
     public Map<String, String> getStudzone2Cookies() {
         return new HashMap<>(studzone2Cookies);
-    }
-
-    /**
-     * Main method for testing session management
-     */
-    public static void main(String[] args) {
-        System.out.println("🧪 Testing Session Manager...\n");
-
-        SessionManager sessionManager = SessionManager.getInstance();
-
-        try {
-            System.out.println("Testing Studzone1 login...");
-            boolean studzone1Success = sessionManager.loginToStudzone1("test123", "password");
-            System.out.println("Studzone1 Result: " + (studzone1Success ? "✅ Success" : "❌ Failed"));
-
-            if (studzone1Success) {
-                System.out.println("\nTesting Studzone2 login...");
-                boolean studzone2Success = sessionManager.loginToStudzone2("test123", "password");
-                System.out.println("Studzone2 Result: " + (studzone2Success ? "✅ Success" : "❌ Failed"));
-
-                System.out.println("\nFetching student name...");
-                String name = sessionManager.fetchStudentName();
-                System.out.println("Student Name: " + name);
-
-                System.out.println("\nChecking session validity...");
-                boolean isValid = sessionManager.isSessionValid();
-                System.out.println("Session Valid: " + (isValid ? "✅ Yes" : "❌ No"));
-            }
-
-        } catch (IOException e) {
-            System.err.println("❌ Test failed with exception:");
-            e.printStackTrace();
-        } finally {
-            sessionManager.clearSession();
-            System.out.println("\n✅ Test completed");
-        }
     }
 }

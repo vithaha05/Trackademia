@@ -2,6 +2,7 @@ package com.psgtech.studentportal.services;
 
 import com.psgtech.studentportal.models.*;
 import com.psgtech.studentportal.database.DatabaseManager;
+import com.psgtech.studentportal.utils.SessionManager;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -20,7 +21,7 @@ import java.util.*;
  */
 public class ScraperService {
 
-    private Map<String, String> cookies;
+    private final SessionManager sessionManager;
     private DatabaseService databaseService;
     private String currentRollNo;
 
@@ -28,7 +29,7 @@ public class ScraperService {
     private static final String BASE_URL_CGPA = "https://ecampus.psgtech.ac.in/studzone2/";
 
     public ScraperService(DatabaseManager dbManager) {
-        this.cookies = new HashMap<>();
+        this.sessionManager = SessionManager.getInstance();
         this.databaseService = new DatabaseService(dbManager);
     }
 
@@ -75,36 +76,7 @@ public class ScraperService {
      */
     private boolean loginToAttendancePortal(String rollNo, String password) {
         try {
-            Connection.Response loginPageResponse = Jsoup.connect(BASE_URL_ATTENDANCE)
-                    .timeout(10000)
-                    .method(Connection.Method.GET)
-                    .execute();
-
-            Document loginPage = loginPageResponse.parse();
-            String token = loginPage.select("input[name=__RequestVerificationToken]").val();
-
-            cookies.putAll(loginPageResponse.cookies());
-
-            Map<String, String> loginData = new HashMap<>();
-            loginData.put("rollno", rollNo);
-            loginData.put("password", password);
-            loginData.put("chkterms", "on");
-            loginData.put("__RequestVerificationToken", token);
-
-            Connection.Response loginResponse = Jsoup.connect(BASE_URL_ATTENDANCE)
-                    .cookies(cookies)
-                    .data(loginData)
-                    .timeout(10000)
-                    .method(Connection.Method.POST)
-                    .execute();
-
-            cookies.putAll(loginResponse.cookies());
-
-            Document homePage = loginResponse.parse();
-            Element navbar = homePage.selectFirst("nav.navbar.navbar-expand-lg.navbar-light");
-
-            return navbar != null;
-
+            return sessionManager.loginToStudzone1(rollNo, password);
         } catch (IOException e) {
             System.err.println("❌ Login to attendance portal failed: " + e.getMessage());
             return false;
@@ -116,42 +88,7 @@ public class ScraperService {
      */
     private boolean loginToCGPAPortal(String rollNo, String password) {
         try {
-            Connection.Response loginPageResponse = Jsoup.connect(BASE_URL_CGPA)
-                    .timeout(10000)
-                    .method(Connection.Method.GET)
-                    .execute();
-
-            Document loginPage = loginPageResponse.parse();
-            String viewstate = loginPage.select("input[name=__VIEWSTATE]").val();
-            String viewstateGenerator = loginPage.select("input[name=__VIEWSTATEGENERATOR]").val();
-            String eventValidation = loginPage.select("input[name=__EVENTVALIDATION]").val();
-            String abcd3 = loginPage.select("input[name=abcd3]").val();
-
-            Map<String, String> cgpaCookies = new HashMap<>(loginPageResponse.cookies());
-
-            Map<String, String> loginData = new HashMap<>();
-            loginData.put("__EVENTTARGET", "");
-            loginData.put("__EVENTARGUMENT", "");
-            loginData.put("__LASTFOCUS", "");
-            loginData.put("__VIEWSTATE", viewstate);
-            loginData.put("__VIEWSTATEGENERATOR", viewstateGenerator);
-            loginData.put("__EVENTVALIDATION", eventValidation);
-            loginData.put("rdolst", "S");
-            loginData.put("txtusercheck", rollNo);
-            loginData.put("txtpwdcheck", password);
-            loginData.put("abcd3", abcd3);
-
-            Connection.Response loginResponse = Jsoup.connect(BASE_URL_CGPA)
-                    .cookies(cgpaCookies)
-                    .data(loginData)
-                    .timeout(10000)
-                    .method(Connection.Method.POST)
-                    .execute();
-
-            cookies.putAll(loginResponse.cookies());
-
-            return true;
-
+            return sessionManager.loginToStudzone2(rollNo, password);
         } catch (IOException e) {
             System.err.println("❌ Login to CGPA portal failed: " + e.getMessage());
             return false;
@@ -164,10 +101,7 @@ public class ScraperService {
     private void fetchAndSaveStudentInfo() throws SQLException {
         try {
             String profileUrl = "https://ecampus.psgtech.ac.in/studzone/Home/Profile";
-            Document page = Jsoup.connect(profileUrl)
-                    .cookies(cookies)
-                    .timeout(10000)
-                    .get();
+            Document page = sessionManager.fetchStudzone1Page(profileUrl);
 
             Element profileName = page.selectFirst("h2.profile-name");
             String name = profileName != null ? profileName.text() : "Unknown";
@@ -184,10 +118,7 @@ public class ScraperService {
             // Try to get additional info from scholarship page
             try {
                 String scholarshipUrl = "https://ecampus.psgtech.ac.in/studzone/Scholar/VallalarScholarship";
-                Document scholarshipPage = Jsoup.connect(scholarshipUrl)
-                        .cookies(cookies)
-                        .timeout(10000)
-                        .get();
+                Document scholarshipPage = sessionManager.fetchStudzone1Page(scholarshipUrl);
 
                 Element personalInfoTable = scholarshipPage.selectFirst("td.personal-info");
                 if (personalInfoTable != null) {
@@ -218,10 +149,7 @@ public class ScraperService {
     private void fetchAndSaveInternalMarks() throws SQLException {
         try {
             String internalsUrl = "https://ecampus.psgtech.ac.in/studzone/ContinuousAssessment/CAMarksView";
-            Document page = Jsoup.connect(internalsUrl)
-                    .cookies(cookies)
-                    .timeout(10000)
-                    .get();
+            Document page = sessionManager.fetchStudzone1Page(internalsUrl);
 
             Elements tables = page.select("table");
 
@@ -282,15 +210,13 @@ public class ScraperService {
     }
 
     /**
-     * Fetch and save courses with grades
+     * Fetch and save courses with grades - ENHANCED WITH DEBUGGING
      */
     private void fetchAndSaveCourses() throws SQLException {
         try {
             String coursesUrl = "https://ecampus.psgtech.ac.in/studzone2/AttWfStudCourseSelection.aspx";
-            Document page = Jsoup.connect(coursesUrl)
-                    .cookies(cookies)
-                    .timeout(10000)
-                    .get();
+            System.out.println("🔄 Fetching courses page...");
+            Document page = sessionManager.fetchStudzone2Page(coursesUrl);
 
             Element completedCoursesTable = page.selectFirst("table#PDGCourse");
 
@@ -300,17 +226,100 @@ public class ScraperService {
             }
 
             Elements rows = completedCoursesTable.select("tr");
+            System.out.println("📊 Total rows in table: " + rows.size());
+
+            // Debug: Print first row structure
+            if (rows.size() > 0) {
+                Elements headerCells = rows.get(0).select("th, td");
+                System.out.println("📋 Header row has " + headerCells.size() + " columns:");
+                for (int i = 0; i < headerCells.size(); i++) {
+                    System.out.println("  [" + i + "] " + headerCells.get(i).text());
+                }
+            }
+
+            // Debug: Print first data row
+            if (rows.size() > 1) {
+                Elements firstRowCells = rows.get(1).select("td");
+                System.out.println("📝 First data row has " + firstRowCells.size() + " cells:");
+                for (int i = 0; i < firstRowCells.size(); i++) {
+                    System.out.println("  [" + i + "] '" + firstRowCells.get(i).text() + "'");
+                }
+            }
+
+            int successCount = 0;
+            int failCount = 0;
 
             for (int i = 1; i < rows.size(); i++) {
                 Elements cells = rows.get(i).select("td");
-                if (cells.size() < 8) continue;
+
+                // More flexible cell count check
+                if (cells.size() < 7) {
+                    System.out.println("⚠️ Row " + i + " has only " + cells.size() + " cells, skipping");
+                    failCount++;
+                    continue;
+                }
 
                 try {
-                    String courseCode = cells.get(1).text().trim();
-                    String courseName = cells.get(2).text().trim();
-                    int semester = Integer.parseInt(cells.get(4).text().trim());
-                    int credits = Integer.parseInt(cells.get(5).text().trim());
-                    String grade = cells.get(6).text().trim();
+                    // Try to parse with flexible indexing
+                    String courseCode = "";
+                    String courseName = "";
+                    String semesterText = "";
+                    String creditsText = "";
+                    String grade = "";
+
+                    // Parse based on actual table structure
+                    // [0]=S.No, [1]=Code, [2]=Name, [3]=Category, [4]=Sem, [5]=Option, [6]=Grade, [7]=Credits, [8]=Year
+                    if (cells.size() >= 8) {
+                        courseCode = cells.get(1).text().trim();
+                        courseName = cells.get(2).text().trim();
+                        semesterText = cells.get(4).text().trim();
+                        grade = cells.get(6).text().trim();
+                        creditsText = cells.get(7).text().trim(); // FIXED: Credits is column 7, not 5!
+                    } else if (cells.size() >= 7) {
+                        // Fallback format
+                        courseCode = cells.get(1).text().trim();
+                        courseName = cells.get(2).text().trim();
+                        semesterText = cells.get(4).text().trim();
+                        creditsText = cells.get(5).text().trim();
+                        grade = cells.get(6).text().trim();
+                    } else if (cells.size() >= 6) {
+                        // Alternative format without S.No
+                        courseCode = cells.get(0).text().trim();
+                        courseName = cells.get(1).text().trim();
+                        semesterText = cells.get(3).text().trim();
+                        creditsText = cells.get(4).text().trim();
+                        grade = cells.get(5).text().trim();
+                    }
+
+                    // Skip empty rows
+                    if (courseCode.isEmpty() || courseName.isEmpty()) {
+                        failCount++;
+                        continue;
+                    }
+
+                    // Validate semester
+                    if (!semesterText.matches("\\d+")) {
+                        System.out.println("⚠️ Row " + i + ": Invalid semester '" + semesterText + "' for " + courseCode);
+                        failCount++;
+                        continue;
+                    }
+                    int semester = Integer.parseInt(semesterText);
+
+                    // Validate credits
+                    if (!creditsText.matches("\\d+")) {
+                        System.out.println("⚠️ Row " + i + ": Invalid credits '" + creditsText + "' for " + courseCode);
+                        failCount++;
+                        continue;
+                    }
+                    int credits = Integer.parseInt(creditsText);
+
+                    // Validate grade
+                    if (grade.isEmpty()) {
+                        System.out.println("⚠️ Row " + i + ": Empty grade for " + courseCode);
+                        failCount++;
+                        continue;
+                    }
+
                     double gradePoints = convertLetterGradeToPoint(grade);
 
                     Course course = new Course();
@@ -323,14 +332,27 @@ public class ScraperService {
                     course.setGradePoints(gradePoints);
 
                     databaseService.saveCourse(course);
+                    successCount++;
 
+                    if (successCount <= 3) {
+                        System.out.println("✅ Saved: " + courseCode + " | Sem:" + semester + " | Credits:" + credits + " | Grade:" + grade);
+                    }
+
+                } catch (NumberFormatException e) {
+                    System.out.println("⚠️ Row " + i + ": Number format error - " + e.getMessage());
+                    failCount++;
                 } catch (Exception e) {
-                    System.out.println("⚠️ Could not parse course at row " + i);
+                    System.out.println("⚠️ Row " + i + ": Parse error - " + e.getMessage());
+                    failCount++;
                 }
             }
 
+            System.out.println("📊 Course parsing results: " + successCount + " success, " + failCount + " failed");
+
             // Calculate and save CGPA
-            calculateAndSaveCGPA();
+            if (successCount > 0) {
+                calculateAndSaveCGPA();
+            }
 
             System.out.println("✅ Courses and CGPA saved");
 
@@ -394,10 +416,7 @@ public class ScraperService {
     private int getCompletedSemester() {
         try {
             String resultsUrl = "https://ecampus.psgtech.ac.in/studzone2/FrmEpsStudResult.aspx";
-            Document page = Jsoup.connect(resultsUrl)
-                    .cookies(cookies)
-                    .timeout(10000)
-                    .get();
+            Document page = sessionManager.fetchStudzone2Page(resultsUrl);
 
             Element resultsTable = page.selectFirst("table#DgResult");
 
@@ -441,8 +460,136 @@ public class ScraperService {
         gradeMap.put("B+", 7.0);
         gradeMap.put("B", 6.0);
         gradeMap.put("C", 5.0);
+        gradeMap.put("U", 0.0);
+        gradeMap.put("RA", 0.0);
 
         return gradeMap.getOrDefault(grade, 0.0);
+    }
+
+    /**
+     * Scrape completed courses and grades
+     */
+    public List<Course> scrapeCompletedCourses() throws IOException {
+        System.out.println("📚 Scraping completed courses...");
+
+        try {
+            // Add delay to ensure studzone2 session is ready
+            Thread.sleep(2000);
+
+            String coursesUrl = "https://ecampus.psgtech.ac.in/studzone2/AttWfStudCourseSelection.aspx";
+
+            // First GET request to load the page
+            System.out.println("🔄 Fetching courses page...");
+            Document coursesPage = sessionManager.fetchStudzone2Page(coursesUrl);
+
+            // Check if we got redirected to login (session expired)
+            if (coursesPage.select("input[name=txtusercheck]").size() > 0) {
+                System.err.println("❌ Session expired, need to re-login");
+                throw new IOException("Session expired on studzone2");
+            }
+
+            List<Course> courses = new ArrayList<>();
+
+            // Look for the completed courses table
+            Element completedCoursesTable = coursesPage.select("table#PDGCourse").first();
+
+            if (completedCoursesTable == null) {
+                // Try alternative selectors
+                System.out.println("⚠️ Table #PDGCourse not found, trying alternatives...");
+
+                Elements allTables = coursesPage.select("table");
+                System.out.println("📊 Found " + allTables.size() + " tables on page:");
+                for (int i = 0; i < allTables.size(); i++) {
+                    Element table = allTables.get(i);
+                    String tableId = table.attr("id");
+                    String tableClass = table.attr("class");
+                    System.out.println("  Table " + i + ": id='" + tableId + "', class='" + tableClass + "'");
+
+                    if (tableId.contains("PDG") || tableId.contains("Course") ||
+                            tableClass.contains("course") || tableClass.contains("grid")) {
+                        completedCoursesTable = table;
+                        System.out.println("  ✅ Using this table!");
+                        break;
+                    }
+                }
+
+                if (completedCoursesTable == null) {
+                    System.err.println("❌ Could not find courses table on page");
+                    return courses;
+                }
+            }
+
+            Elements rows = completedCoursesTable.select("tr");
+            System.out.println("📋 Found " + rows.size() + " rows in table");
+
+            if (rows.size() <= 1) {
+                System.out.println("⚠️ No data rows found (only header)");
+                return courses;
+            }
+
+            // Grade mapping
+            Map<String, Double> gradeMap = new HashMap<>();
+            gradeMap.put("O", 10.0);
+            gradeMap.put("A+", 9.0);
+            gradeMap.put("A", 8.0);
+            gradeMap.put("B+", 7.0);
+            gradeMap.put("B", 6.0);
+            gradeMap.put("C", 5.0);
+            gradeMap.put("U", 0.0);
+            gradeMap.put("RA", 0.0);
+
+            for (int i = 1; i < rows.size(); i++) {
+                Elements cells = rows.get(i).select("td");
+
+                if (cells.size() < 7) {
+                    continue;
+                }
+
+                try {
+                    String courseCode = cells.get(1).text().trim();
+                    String courseName = cells.get(2).text().trim();
+
+                    if (courseCode.isEmpty() && courseName.isEmpty()) {
+                        continue;
+                    }
+
+                    Course course = new Course();
+                    course.setRollNo(sessionManager.getRollNo());
+                    course.setCourseCode(courseCode);
+                    course.setCourseName(courseName);
+
+                    String semesterText = cells.get(4).text().trim();
+                    if (!semesterText.isEmpty() && semesterText.matches("\\d+")) {
+                        course.setSemester(Integer.parseInt(semesterText));
+                    } else {
+                        continue;
+                    }
+
+                    String creditsText = cells.get(5).text().trim();
+                    if (!creditsText.isEmpty() && creditsText.matches("\\d+")) {
+                        course.setCredits(Integer.parseInt(creditsText));
+                    } else {
+                        continue;
+                    }
+
+                    String grade = cells.get(6).text().trim();
+                    course.setGrade(grade);
+                    course.setGradePoints(gradeMap.getOrDefault(grade, 0.0));
+
+                    courses.add(course);
+
+                } catch (Exception e) {
+                    // Silently skip problematic rows
+                }
+            }
+
+            System.out.println("✅ Successfully scraped " + courses.size() + " courses");
+            return courses;
+
+        } catch (InterruptedException e) {
+            System.err.println("❌ Thread interrupted");
+            throw new IOException("Thread interrupted", e);
+        }
     }
 
     /**
@@ -466,10 +613,7 @@ public class ScraperService {
     public String getStudentGreeting() {
         try {
             String scholarshipUrl = "https://ecampus.psgtech.ac.in/studzone/Scholar/VallalarScholarship";
-            Document page = Jsoup.connect(scholarshipUrl)
-                    .cookies(cookies)
-                    .timeout(10000)
-                    .get();
+            Document page = sessionManager.fetchStudzone1Page(scholarshipUrl);
 
             Element personalInfoTable = page.selectFirst("td.personal-info");
             if (personalInfoTable == null) {
@@ -499,10 +643,7 @@ public class ScraperService {
     private String fallbackGreeting() {
         try {
             String profileUrl = "https://ecampus.psgtech.ac.in/studzone/Home/Profile";
-            Document page = Jsoup.connect(profileUrl)
-                    .cookies(cookies)
-                    .timeout(10000)
-                    .get();
+            Document page = sessionManager.fetchStudzone1Page(profileUrl);
 
             Element profileName = page.selectFirst("h2.profile-name");
             if (profileName != null) {
