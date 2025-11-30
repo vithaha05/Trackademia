@@ -4,143 +4,114 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.effect.DropShadow?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.psgtech.studentportal.controllers.LoginController"
-      alignment="CENTER"
-      spacing="20"
-      style="-fx-background-color: #f5f5f5;">
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.psgtech.studentportal.controllers.LoginController"
+           styleClass="login-root">
 
-    <padding>
-        <Insets top="50" right="50" bottom="50" left="50"/>
-    </padding>
-
-    <!-- Login Container -->
-    <VBox alignment="CENTER" spacing="25" maxWidth="400"
-          style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 2);">
-
-        <padding>
-            <Insets top="40" right="40" bottom="40" left="40"/>
-        </padding>
-
-        <!-- Title -->
-        <Label text="Tracademia" styleClass="title">
-            <font>
-                <Font name="System Bold" size="32"/>
-            </font>
-            <style>
-                -fx-text-fill: #2c3e50;
-            </style>
-        </Label>
-
-        <Label text="PSG Tech Student Portal" styleClass="subtitle">
-            <font>
-                <Font size="14"/>
-            </font>
-            <style>
-                -fx-text-fill: #7f8c8d;
-            </style>
-        </Label>
-
-        <!-- Spacer -->
-        <Region prefHeight="20"/>
-
-        <!-- Roll Number Field -->
-        <VBox spacing="8">
-            <Label text="Roll Number" styleClass="field-label">
-                <font>
-                    <Font size="12"/>
-                </font>
-                <style>
-                    -fx-text-fill: #34495e;
-                    -fx-font-weight: bold;
-                </style>
-            </Label>
-            <TextField fx:id="rollNoField" promptText="Enter your roll number"
-                       styleClass="input-field" prefHeight="40">
-                <font>
-                    <Font size="14"/>
-                </font>
-                <style>
-                    -fx-background-color: #ecf0f1;
-                    -fx-background-radius: 5;
-                    -fx-border-color: transparent;
-                    -fx-padding: 10;
-                </style>
-            </TextField>
-        </VBox>
-
-        <!-- Password Field -->
-        <VBox spacing="8">
-            <Label text="Password" styleClass="field-label">
-                <font>
-                    <Font size="12"/>
-                </font>
-                <style>
-                    -fx-text-fill: #34495e;
-                    -fx-font-weight: bold;
-                </style>
-            </Label>
-            <PasswordField fx:id="passwordField" promptText="Enter your password"
-                           styleClass="input-field" prefHeight="40">
-                <font>
-                    <Font size="14"/>
-                </font>
-                <style>
-                    -fx-background-color: #ecf0f1;
-                    -fx-background-radius: 5;
-                    -fx-border-color: transparent;
-                    -fx-padding: 10;
-                </style>
-            </PasswordField>
-        </VBox>
-
-        <!-- Status Label -->
-        <Label fx:id="statusLabel" text="" wrapText="true" alignment="CENTER">
-            <font>
-                <Font size="12"/>
-            </font>
-        </Label>
-
-        <!-- Loading Indicator -->
-        <ProgressIndicator fx:id="loadingIndicator" prefWidth="30" prefHeight="30" visible="false"/>
-
-        <!-- Login Button -->
-        <Button fx:id="loginButton" text="Login" prefWidth="200" prefHeight="45"
-                styleClass="login-button">
-            <font>
-                <Font name="System Bold" size="14"/>
-            </font>
-            <style>
-                -fx-background-color: #3498db;
-                -fx-text-fill: white;
-                -fx-background-radius: 5;
-                -fx-cursor: hand;
-            </style>
-        </Button>
-
-        <!-- Info Text -->
-        <Label text="Use your PSG Tech ecampus credentials" wrapText="true" alignment="CENTER"
-               maxWidth="300">
-            <font>
-                <Font size="11"/>
-            </font>
-            <style>
-                -fx-text-fill: #95a5a6;
-            </style>
-        </Label>
-
+    <!-- Background Gradient -->
+    <VBox styleClass="gradient-background">
+        <Region VBox.vgrow="ALWAYS"/>
     </VBox>
 
-    <!-- Footer -->
-    <Label text="© 2024 Tracademia - PSG Tech Student Portal">
-        <font>
-            <Font size="10"/>
-        </font>
-        <style>
-            -fx-text-fill: #95a5a6;
-        </style>
-    </Label>
+    <!-- Main Content -->
+    <VBox alignment="CENTER" spacing="30" maxWidth="450" styleClass="login-container">
+        <padding>
+            <Insets top="60" right="50" bottom="60" left="50"/>
+        </padding>
 
-</VBox>
+        <!-- Logo/Icon Section -->
+        <VBox alignment="CENTER" spacing="10">
+            <Label text="🎓" styleClass="logo-emoji">
+                <font>
+                    <Font size="64"/>
+                </font>
+            </Label>
+            <Label text="Tracademia" styleClass="app-title">
+                <font>
+                    <Font name="System Bold" size="42"/>
+                </font>
+            </Label>
+            <Label text="PSG Tech Student Portal" styleClass="app-subtitle">
+                <font>
+                    <Font size="16"/>
+                </font>
+            </Label>
+        </VBox>
+
+        <!-- Login Form Card -->
+        <VBox spacing="25" styleClass="login-card">
+            <padding>
+                <Insets top="40" right="40" bottom="40" left="40"/>
+            </padding>
+
+            <!-- Roll Number Field -->
+            <VBox spacing="8">
+                <Label text="Roll Number" styleClass="field-label">
+                    <font>
+                        <Font size="13" name="System Bold"/>
+                    </font>
+                </Label>
+                <TextField fx:id="rollNoField" promptText="Enter your roll number"
+                           styleClass="modern-input" prefHeight="48">
+                    <font>
+                        <Font size="14"/>
+                    </font>
+                </TextField>
+            </VBox>
+
+            <!-- Password Field -->
+            <VBox spacing="8">
+                <Label text="Password" styleClass="field-label">
+                    <font>
+                        <Font size="13" name="System Bold"/>
+                    </font>
+                </Label>
+                <PasswordField fx:id="passwordField" promptText="Enter your password"
+                              styleClass="modern-input" prefHeight="48">
+                    <font>
+                        <Font size="14"/>
+                    </font>
+                </PasswordField>
+            </VBox>
+
+            <!-- Status Label -->
+            <Label fx:id="statusLabel" text="" wrapText="true" alignment="CENTER"
+                   styleClass="status-label" maxWidth="350">
+                <font>
+                    <Font size="12"/>
+                </font>
+            </Label>
+
+            <!-- Loading Indicator -->
+            <ProgressIndicator fx:id="loadingIndicator" prefWidth="32" prefHeight="32" 
+                              visible="false" styleClass="loading-indicator"/>
+
+            <!-- Login Button -->
+            <Button fx:id="loginButton" text="Sign In" prefWidth="350" prefHeight="50"
+                    styleClass="primary-button">
+                <font>
+                    <Font name="System Bold" size="16"/>
+                </font>
+            </Button>
+
+            <!-- Info Text -->
+            <Label text="Use your PSG Tech ecampus credentials to access your academic data" 
+                   wrapText="true" alignment="CENTER" styleClass="info-text" maxWidth="350">
+                <font>
+                    <Font size="11"/>
+                </font>
+            </Label>
+        </VBox>
+
+        <!-- Footer -->
+        <Label text="© 2024 Tracademia - Academic Performance Analytics" styleClass="footer-text">
+            <font>
+                <Font size="10"/>
+            </font>
+        </Label>
+    </VBox>
+
+</StackPane>

@@ -1,31 +1,152 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.Region?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.psgtech.studentportal.controllers.DashboardController">
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.psgtech.studentportal.controllers.DashboardController"
+            styleClass="dashboard-root">
+
     <top>
-        <HBox spacing="10.0" style="-fx-padding: 15; -fx-background-color: #2c3e50;">
-            <Label text="Tracademia Dashboard" style="-fx-text-fill: white; -fx-font-size: 18;"/>
-            <Region HBox.hgrow="ALWAYS" />
-            <Label fx:id="userLabel" text="User:" style="-fx-text-fill: white;"/>
-            <Button fx:id="logoutButton" text="Logout"/>
-        </HBox>
+        <VBox spacing="0" styleClass="header-section">
+            <HBox alignment="CENTER_LEFT" styleClass="top-bar">
+                <padding>
+                    <Insets top="20" right="30" bottom="20" left="30"/>
+                </padding>
+
+                <VBox spacing="2">
+                    <Label fx:id="lblWelcome" text="Welcome, Student!" styleClass="welcome-label">
+                        <font>
+                            <Font name="System Bold" size="28"/>
+                        </font>
+                    </Label>
+                    <Label text="Track your academic performance" styleClass="subtitle-label">
+                        <font>
+                            <Font size="13"/>
+                        </font>
+                    </Label>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="btnLogout" text="Logout" onAction="#handleLogout" styleClass="logout-button">
+                    <font>
+                        <Font name="System Bold" size="13"/>
+                    </font>
+                </Button>
+            </HBox>
+
+            <HBox spacing="20" styleClass="stats-container">
+                <padding>
+                    <Insets top="0" right="30" bottom="25" left="30"/>
+                </padding>
+
+                <VBox spacing="8" styleClass="stat-card cgpa-card">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    <Label text="CGPA" styleClass="stat-label">
+                        <font>
+                            <Font size="13"/>
+                        </font>
+                    </Label>
+                    <Label fx:id="lblCGPA" text="0.00" styleClass="stat-value">
+                        <font>
+                            <Font name="System Bold" size="36"/>
+                        </font>
+                    </Label>
+                    <Label text="Cumulative Grade Point Average" styleClass="stat-description">
+                        <font>
+                            <Font size="11"/>
+                        </font>
+                    </Label>
+                </VBox>
+
+                <VBox spacing="8" styleClass="stat-card gpa-card">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    <Label text="GPA" styleClass="stat-label">
+                        <font>
+                            <Font size="13"/>
+                        </font>
+                    </Label>
+                    <Label fx:id="lblCurrentGPA" text="0.00" styleClass="stat-value">
+                        <font>
+                            <Font name="System Bold" size="36"/>
+                        </font>
+                    </Label>
+                    <Label text="Current Semester Grade Point Average" styleClass="stat-description">
+                        <font>
+                            <Font size="11"/>
+                        </font>
+                    </Label>
+                </VBox>
+
+                <VBox spacing="8" styleClass="stat-card semester-card">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    <Label text="Semester" styleClass="stat-label">
+                        <font>
+                            <Font size="13"/>
+                        </font>
+                    </Label>
+                    <Label fx:id="lblCurrentSemester" text="-" styleClass="stat-value">
+                        <font>
+                            <Font name="System Bold" size="36"/>
+                        </font>
+                    </Label>
+                    <Label text="Current Academic Semester" styleClass="stat-description">
+                        <font>
+                            <Font size="11"/>
+                        </font>
+                    </Label>
+                </VBox>
+            </HBox>
+        </VBox>
     </top>
 
     <center>
-    <VBox spacing="20.0" style="-fx-padding: 20;">
-        <Label text="Welcome to Dashboard" style="-fx-font-size: 20;"/>
-        <Label fx:id="cgpaLabel" text="CGPA: Loading..."/>
-        <Label fx:id="gpaLabel" text="GPA: Loading..."/>
-        <Label fx:id="semesterLabel" text="Semester: Loading..."/>
-        <Label fx:id="coursesLabel" text="Courses: Loading..." wrapText="true"/>
-    </VBox>
-</center>
-        </BorderPane>
+        <VBox spacing="20" styleClass="content-section">
+            <padding>
+                <Insets top="25" right="30" bottom="25" left="30"/>
+            </padding>
+
+            <HBox spacing="15" alignment="CENTER_LEFT" styleClass="filter-section">
+                <Label text="📚" styleClass="section-icon">
+                    <font>
+                        <Font size="20"/>
+                    </font>
+                </Label>
+                <Label text="Course Details" styleClass="section-title">
+                    <font>
+                        <Font name="System Bold" size="22"/>
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Filter by Semester:" styleClass="filter-label">
+                    <font>
+                        <Font size="14" name="System Bold"/>
+                    </font>
+                </Label>
+                <ComboBox fx:id="cmbSemesterSelector" prefWidth="220" style="-fx-font-size: 13px;"/>
+            </HBox>
+
+            <TableView fx:id="tblCourses" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCourseCode" text="Course Code" prefWidth="130"/>
+                    <TableColumn fx:id="colCourseName" text="Course Name" prefWidth="380"/>
+                    <TableColumn fx:id="colCategory" text="Category" prefWidth="110"/>
+                    <TableColumn fx:id="colCredits" text="Credits" prefWidth="90"/>
+                    <TableColumn fx:id="colGrade" text="Grade" prefWidth="90"/>
+                    <TableColumn fx:id="colGradePoints" text="Grade Points" prefWidth="120"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+</BorderPane>

@@ -54,7 +54,7 @@ public class MainApp extends Application {
             Parent root = loader.load();
 
             Scene scene = new Scene(root, 600, 400);
-            //scene.getStylesheets().add(MainApp.class.getResource("/styles/style.css").toExternalForm());
+            scene.getStylesheets().add(MainApp.class.getResource("/styles/style.css").toExternalForm());
 
             instance.primaryStage.setTitle("Tracademia - PSG Tech Student Portal");
             instance.primaryStage.setScene(scene);

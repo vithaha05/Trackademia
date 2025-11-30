@@ -138,14 +138,15 @@ public class LoginController {
         try {
             Stage stage = (Stage) loginButton.getScene().getWindow();
 
-            // ✅ FIXED PATH for src/main/resources/views/dashboard.fxml
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/dashboard.fxml"));
+            // Load DashboardView.fxml
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/DashboardView.fxml"));
             Parent dashboardRoot = loader.load();
 
             DashboardController controller = loader.getController();
             controller.initializeWithStudent(rollNo);
 
-            Scene scene = new Scene(dashboardRoot, 1000, 700);
+            Scene scene = new Scene(dashboardRoot, 1200, 800);
+            scene.getStylesheets().add(getClass().getResource("/styles/style.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("Tracademia - Dashboard (" + rollNo + ")");
             stage.show();
