@@ -410,6 +410,28 @@
     -fx-progress-color: #667eea;
 }
 
+/* Navigation Button Styling */
+.nav-button {
+    -fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.3), 8, 0, 0, 2);
+    -fx-padding: 10px 20px;
+}
+
+.nav-button:hover {
+    -fx-background-color: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 12, 0, 0, 3);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.nav-button:pressed {
+    -fx-scale-x: 0.95;
+    -fx-scale-y: 0.95;
+}
+
 /* Smooth Transitions */
 * {
     -fx-transition-duration: 0.2s;

@@ -10,7 +10,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -40,19 +39,13 @@ public class DashboardController {
     private List<Course> allCourses;
     private Map<Integer, CGPARecord> cgpaRecords;
 
+    @FXML
     public void initialize() {
         System.out.println("✅ Dashboard controller initialized");
-        tblCourses.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        sessionManager = SessionManager.getInstance();
-        rollNo = sessionManager.getLoggedInStudentRollNo();
-
-        if (rollNo == null) {
-            showError("No user logged in!");
-            return;
+        if (tblCourses != null) {
+            tblCourses.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         }
-
-        // Setup table columns first
-        setupTableColumns();
+        sessionManager = SessionManager.getInstance();
     }
 
     /**
@@ -70,35 +63,82 @@ public class DashboardController {
         loadDashboardData();
 
         // Setup semester selector listener
-        cmbSemesterSelector.setOnAction(e -> handleSemesterChange());
+        if (cmbSemesterSelector != null) {
+            cmbSemesterSelector.setOnAction(e -> handleSemesterChange());
+        }
 
         System.out.println("✅ Dashboard loaded for student: " + rollNo);
     }
 
     private void setupTableColumns() {
-        colCourseCode.setCellValueFactory(new PropertyValueFactory<>("courseCode"));
-        colCourseName.setCellValueFactory(new PropertyValueFactory<>("courseName"));
+        System.out.println("🔧 Setting up table columns...");
+
+        colCourseCode.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCourseCode()));
+
+        colCourseName.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCourseName()));
+
+        // FIXED: Category detection now checks credits first, then course name for "LAB"
         colCategory.setCellValueFactory(cellData -> {
-            String code = cellData.getValue().getCourseCode();
-            return new javafx.beans.property.SimpleStringProperty(extractCategory(code));
+            Course course = cellData.getValue();
+            String category = extractCategory(course.getCourseCode(), course.getCourseName(), course.getCredits());
+            return new javafx.beans.property.SimpleStringProperty(category);
         });
-        colCredits.setCellValueFactory(new PropertyValueFactory<>("credits"));
-        colGrade.setCellValueFactory(new PropertyValueFactory<>("grade"));
-        colGradePoints.setCellValueFactory(new PropertyValueFactory<>("gradePoints"));
+
+        colCredits.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getCredits()));
+
+        colGrade.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getGrade()));
+
+        colGradePoints.setCellValueFactory(cellData ->
+                new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getGradePoints()));
+
+        System.out.println("✅ Table columns configured");
     }
 
-    private String extractCategory(String courseCode) {
-        if (courseCode.length() >= 6) {
-            String lastTwo = courseCode.substring(4, 6);
-            try {
-                int num = Integer.parseInt(lastTwo);
-                if (num >= 6 && num <= 9) return "Lab";
-                return "Theory";
-            } catch (NumberFormatException e) {
-                return "Unknown";
+    /**
+     * FIXED: Enhanced category extraction with credit-based detection
+     * 1. Checks if credits = 2 (lab courses are typically 2 credits)
+     * 2. Checks course name for "LAB" suffix/contains
+     * 3. Falls back to course code analysis if needed
+     */
+    private String extractCategory(String courseCode, String courseName, int credits) {
+        // Primary check: Credits = 2 typically indicates a lab course
+        if (credits == 2) {
+            return "Laboratory";
+        }
+
+        // Secondary check: Course name ends with "LAB" (case-insensitive)
+        if (courseName != null && courseName.trim().toUpperCase().endsWith("LAB")) {
+            return "Laboratory";
+        }
+
+        // Tertiary check: Course name contains "LAB" or "LABORATORY" anywhere
+        if (courseName != null) {
+            String upperName = courseName.trim().toUpperCase();
+            if (upperName.contains("LAB") || upperName.contains("LABORATORY")) {
+                return "Laboratory";
             }
         }
-        return "Unknown";
+
+        // Fallback: Check course code pattern (5th-6th digits)
+        // Lab courses typically have codes like: 20CS506, 20CS507, 20CS508, 20CS509
+        if (courseCode != null && courseCode.length() >= 6) {
+            try {
+                String lastTwo = courseCode.substring(4, 6);
+                int num = Integer.parseInt(lastTwo);
+                if (num >= 6 && num <= 9) {
+                    return "Laboratory";
+                }
+            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                // Ignore parsing errors
+            }
+        }
+
+        // Default: Theory course
+        return "Theory";
     }
 
     private void loadDashboardData() {
@@ -117,6 +157,15 @@ public class DashboardController {
             // Load all courses
             allCourses = databaseService.getCourses(rollNo);
             System.out.println("📚 Loaded " + allCourses.size() + " courses from database");
+
+            // Debug: Show category classification for first few courses
+            System.out.println("📋 Course categories:");
+            for (int i = 0; i < Math.min(5, allCourses.size()); i++) {
+                Course c = allCourses.get(i);
+                String category = extractCategory(c.getCourseCode(), c.getCourseName(), c.getCredits());
+                System.out.println("  " + c.getCourseCode() + " - " + c.getCourseName() +
+                        " (Credits: " + c.getCredits() + ") → " + category);
+            }
 
             // Get unique semesters and sort
             Set<Integer> semesters = allCourses.stream()

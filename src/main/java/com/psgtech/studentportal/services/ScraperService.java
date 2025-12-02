@@ -60,8 +60,8 @@ public class ScraperService {
         // Fetch and save data
         try {
             fetchAndSaveStudentInfo();
-            fetchAndSaveInternalMarks();
-            fetchAndSaveCourses();
+            fetchAndSaveCourses(); // Fetch courses first to match course names
+            fetchAndSaveInternalMarks(); // Then fetch internal marks with proper course names
             System.out.println("✅ All data scraped and saved successfully!");
             return true;
         } catch (Exception e) {
@@ -145,9 +145,20 @@ public class ScraperService {
 
     /**
      * Fetch and save internal marks
+     * Note: Internal marks are only for the current semester
      */
     private void fetchAndSaveInternalMarks() throws SQLException {
         try {
+            // Get current semester from student record
+            Student student = databaseService.getStudent(currentRollNo);
+            if (student == null) {
+                System.err.println("❌ Student record not found, cannot determine current semester");
+                return;
+            }
+            
+            int currentSemester = student.getCurrentSemester();
+            System.out.println("📊 Fetching internal marks for current semester: " + currentSemester);
+
             String internalsUrl = "https://ecampus.psgtech.ac.in/studzone/ContinuousAssessment/CAMarksView";
             Document page = sessionManager.fetchStudzone1Page(internalsUrl);
 
@@ -164,7 +175,7 @@ public class ScraperService {
             if (tbody == null) return;
 
             Elements rows = tbody.select("tr");
-            int currentSemester = getCompletedSemester();
+            int savedCount = 0;
 
             for (Element row : rows) {
                 Elements cells = row.select("td");
@@ -187,22 +198,31 @@ public class ScraperService {
                 try {
                     double totalMarks = Double.parseDouble(totalMarksStr);
 
+                    // Get actual course name from courses table
+                    String courseName = databaseService.getCourseNameByCode(currentRollNo, courseCode);
+                    if (courseName == null || courseName.isEmpty()) {
+                        // Fallback if course not found
+                        courseName = "Course " + courseCode;
+                        System.out.println("⚠️ Course name not found for " + courseCode + ", using fallback");
+                    }
+
                     InternalMarks internal = new InternalMarks();
                     internal.setRollNo(currentRollNo);
-                    internal.setSemester(currentSemester);
+                    internal.setSemester(currentSemester); // Use current semester
                     internal.setCourseCode(courseCode);
-                    internal.setCourseName("Course " + courseCode);
+                    internal.setCourseName(courseName); // Use actual course name
                     internal.setTotalInternalMarks(totalMarks);
                     internal.setMaxMarks(50.0);
 
                     databaseService.saveInternalMarks(internal);
+                    savedCount++;
 
                 } catch (NumberFormatException e) {
                     System.out.println("⚠️ Could not parse marks for " + courseCode);
                 }
             }
 
-            System.out.println("✅ Internal marks saved");
+            System.out.println("✅ Internal marks saved for semester " + currentSemester + " (" + savedCount + " courses)");
 
         } catch (IOException e) {
             System.err.println("❌ Failed to fetch internal marks: " + e.getMessage());

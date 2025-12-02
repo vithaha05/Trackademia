@@ -70,7 +70,7 @@
                     </font>
                 </Label>
                 <PasswordField fx:id="passwordField" promptText="Enter your password"
-                              styleClass="modern-input" prefHeight="48">
+                               styleClass="modern-input" prefHeight="48">
                     <font>
                         <Font size="14"/>
                     </font>
@@ -86,8 +86,8 @@
             </Label>
 
             <!-- Loading Indicator -->
-            <ProgressIndicator fx:id="loadingIndicator" prefWidth="32" prefHeight="32" 
-                              visible="false" styleClass="loading-indicator"/>
+            <ProgressIndicator fx:id="loadingIndicator" prefWidth="32" prefHeight="32"
+                               visible="false" styleClass="loading-indicator"/>
 
             <!-- Login Button -->
             <Button fx:id="loginButton" text="Sign In" prefWidth="350" prefHeight="50"
@@ -98,7 +98,7 @@
             </Button>
 
             <!-- Info Text -->
-            <Label text="Use your PSG Tech ecampus credentials to access your academic data" 
+            <Label text="Use your PSG Tech ecampus credentials to access your academic data"
                    wrapText="true" alignment="CENTER" styleClass="info-text" maxWidth="350">
                 <font>
                     <Font size="11"/>

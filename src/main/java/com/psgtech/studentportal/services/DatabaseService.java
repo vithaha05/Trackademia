@@ -402,4 +402,26 @@ public class DatabaseService {
 
         return null;
     }
+
+    /**
+     * Get course name by course code for a student
+     */
+    public String getCourseNameByCode(String rollNo, String courseCode) throws SQLException {
+        String sql = "SELECT course_name FROM courses WHERE roll_no = ? AND course_code = ? LIMIT 1";
+
+        try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
+            stmt.setString(1, rollNo);
+            stmt.setString(2, courseCode);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String courseName = rs.getString("course_name");
+                rs.close();
+                return courseName;
+            }
+            rs.close();
+        }
+
+        return null;
+    }
 }
