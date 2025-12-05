@@ -29,6 +29,7 @@ public class MainApp extends Application {
             // Initialize managers
             databaseManager = DatabaseManager.getInstance();
             databaseManager.initializeDatabase();
+            databaseManager.populateSampleMLData(); // Ensure ML training data exists
             System.out.println("✅ Database initialized successfully!");
 
             sessionManager = new SessionManager();

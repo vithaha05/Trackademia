@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" 
+            fx:controller="com.psgtech.studentportal.controllers.PredictionController" 
+            styleClass="dashboard-container">
+
+    <top>
+        <VBox styleClass="header-section">
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="top-bar">
+                <padding>
+                    <Insets top="20" right="30" bottom="20" left="30"/>
+                </padding>
+                
+                <Button fx:id="btnBack" text="← Back to Dashboard" onAction="#handleBackToDashboard" 
+                        styleClass="back-button" style="-fx-background-color: transparent; -fx-text-fill: #4a6cf7; -fx-font-weight: bold; -fx-cursor: hand;">
+                    <font>
+                        <Font size="14"/>
+                    </font>
+                </Button>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <Label fx:id="lblProgram" text="Program: Loading..." styleClass="subtitle-label" style="-fx-font-weight: bold;">
+                    <font>
+                        <Font size="14"/>
+                    </font>
+                </Label>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent;">
+            <VBox spacing="25" styleClass="content-section">
+                <padding>
+                    <Insets top="20" right="40" bottom="40" left="40"/>
+                </padding>
+
+                <!-- Main Prediction Card -->
+                <VBox spacing="15" style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2); -fx-background-radius: 16; -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 20, 0, 0, 8);">
+                    <padding>
+                        <Insets top="30" right="40" bottom="30" left="40"/>
+                    </padding>
+                    
+                    <Label text="🎯 PREDICTED FINAL CGPA" style="-fx-text-fill: rgba(255,255,255,0.9);">
+                        <font>
+                            <Font name="System Bold" size="14"/>
+                        </font>
+                    </Label>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="30">
+                        <Label fx:id="lblPredictedCGPA" text="8.00 - 8.50" style="-fx-text-fill: white;">
+                            <font>
+                                <Font name="System Bold" size="48"/>
+                            </font>
+                        </Label>
+                        
+                        <VBox spacing="8">
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Confidence:" style="-fx-text-fill: rgba(255,255,255,0.8);">
+                                    <font><Font size="13"/></font>
+                                </Label>
+                                <Label fx:id="lblConfidence" text="75%" style="-fx-text-fill: white; -fx-font-weight: bold;">
+                                    <font><Font size="13"/></font>
+                                </Label>
+                            </HBox>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Trend:" style="-fx-text-fill: rgba(255,255,255,0.8);">
+                                    <font><Font size="13"/></font>
+                                </Label>
+                                <Label fx:id="lblTrend" text="📈 Improving" style="-fx-text-fill: white; -fx-font-weight: bold;">
+                                    <font><Font size="13"/></font>
+                                </Label>
+                            </HBox>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Progress:" style="-fx-text-fill: rgba(255,255,255,0.8);">
+                                    <font><Font size="13"/></font>
+                                </Label>
+                                <Label fx:id="lblProgress" text="Semester 5 of 10" style="-fx-text-fill: white; -fx-font-weight: bold;">
+                                    <font><Font size="13"/></font>
+                                </Label>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+                    
+                    <!-- Progress Bar -->
+                    <ProgressBar fx:id="progressBar" progress="0.5" prefWidth="400" prefHeight="8" 
+                                 style="-fx-accent: white; -fx-control-inner-background: rgba(255,255,255,0.3);"/>
+                </VBox>
+
+                <!-- GPA Progression Chart -->
+                <VBox spacing="10" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 4);">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    
+                    <Label text="📈 GPA PROGRESSION" style="-fx-text-fill: #1a1a2e; -fx-font-weight: bold;">
+                        <font>
+                            <Font size="16"/>
+                        </font>
+                    </Label>
+                    
+                    <LineChart fx:id="gpaChart" prefHeight="300" animated="true" 
+                               style="-fx-background-color: transparent;">
+                        <xAxis>
+                            <NumberAxis fx:id="xAxis" label="Semester" autoRanging="false" 
+                                       lowerBound="1" upperBound="10" tickUnit="1"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis fx:id="yAxis" label="GPA/CGPA" autoRanging="false" 
+                                       lowerBound="0" upperBound="10" tickUnit="1"/>
+                        </yAxis>
+                    </LineChart>
+                </VBox>
+
+                <!-- Prediction Breakdown -->
+                <VBox spacing="15">
+                    <Label text="📊 PREDICTION BREAKDOWN - Ensemble Model" style="-fx-text-fill: #1a1a2e; -fx-font-weight: bold;">
+                        <font>
+                            <Font size="16"/>
+                        </font>
+                    </Label>
+                    
+                    <HBox spacing="20">
+                        <!-- Damped Linear Card -->
+                        <VBox HBox.hgrow="ALWAYS" spacing="10" style="-fx-background-color: linear-gradient(to bottom right, #4facfe, #00f2fe); -fx-background-radius: 12;">
+                            <padding>
+                                <Insets top="20" right="25" bottom="20" left="25"/>
+                            </padding>
+                            
+                            <Label text="Damped Linear" style="-fx-text-fill: white; -fx-font-weight: bold;">
+                                <font><Font size="13"/></font>
+                            </Label>
+                            <Label fx:id="lblPolyPrediction" text="8.50" style="-fx-text-fill: white;">
+                                <font><Font name="System Bold" size="32"/></font>
+                            </Label>
+                            <Label text="Weight: 50%" style="-fx-text-fill: rgba(255,255,255,0.9);">
+                                <font><Font size="12"/></font>
+                            </Label>
+                            <Label text="Linear trend with dampening for realistic projections" style="-fx-text-fill: rgba(255,255,255,0.8); -fx-wrap-text: true;">
+                                <font><Font size="11"/></font>
+                            </Label>
+                        </VBox>
+                        
+                        <!-- Weighted Average Card -->
+                        <VBox HBox.hgrow="ALWAYS" spacing="10" style="-fx-background-color: linear-gradient(to bottom right, #fa709a, #fee140); -fx-background-radius: 12;">
+                            <padding>
+                                <Insets top="20" right="25" bottom="20" left="25"/>
+                            </padding>
+                            
+                            <Label text="Weighted Average" style="-fx-text-fill: white; -fx-font-weight: bold;">
+                                <font><Font size="13"/></font>
+                            </Label>
+                            <Label fx:id="lblWeightedPrediction" text="8.30" style="-fx-text-fill: white;">
+                                <font><Font name="System Bold" size="32"/></font>
+                            </Label>
+                            <Label text="Weight: 50%" style="-fx-text-fill: rgba(255,255,255,0.9);">
+                                <font><Font size="12"/></font>
+                            </Label>
+                            <Label text="Average GPA baseline with trend momentum" style="-fx-text-fill: rgba(255,255,255,0.8); -fx-wrap-text: true;">
+                                <font><Font size="11"/></font>
+                            </Label>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <!-- Semester GPA Cards -->
+                <VBox spacing="15">
+                    <Label text="📋 SEMESTER-WISE PERFORMANCE" style="-fx-text-fill: #1a1a2e; -fx-font-weight: bold;">
+                        <font>
+                            <Font size="16"/>
+                        </font>
+                    </Label>
+                    
+                    <FlowPane fx:id="semesterCardsPane" hgap="15" vgap="15" prefWrapLength="600"/>
+                </VBox>
+                
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

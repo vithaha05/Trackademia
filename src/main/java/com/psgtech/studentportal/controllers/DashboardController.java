@@ -2,6 +2,8 @@ package com.psgtech.studentportal.controllers;
 
 import com.psgtech.studentportal.models.*;
 import com.psgtech.studentportal.services.DatabaseService;
+import com.psgtech.studentportal.services.CGPAPredictionService;
+import com.psgtech.studentportal.database.DatabaseManager;
 import com.psgtech.studentportal.utils.SessionManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,21 +21,43 @@ import java.util.stream.Collectors;
 
 public class DashboardController {
 
-    @FXML private Label lblWelcome;
-    @FXML private Label lblCGPA;
-    @FXML private Label lblCurrentGPA;
-    @FXML private Label lblCurrentSemester;
-    @FXML private ComboBox<String> cmbSemesterSelector;
-    @FXML private TableView<Course> tblCourses;
-    @FXML private TableColumn<Course, String> colCourseCode;
-    @FXML private TableColumn<Course, String> colCourseName;
-    @FXML private TableColumn<Course, String> colCategory;
-    @FXML private TableColumn<Course, Integer> colCredits;
-    @FXML private TableColumn<Course, String> colGrade;
-    @FXML private TableColumn<Course, Double> colGradePoints;
-    @FXML private Button btnLogout;
+    @FXML
+    private Label lblWelcome;
+    @FXML
+    private Label lblCGPA;
+    @FXML
+    private Label lblCurrentGPA;
+    @FXML
+    private Label lblCurrentSemester;
+    @FXML
+    private Label lblSemesterProgress;
+    @FXML
+    private Label lblPredictedCGPA;
+    @FXML
+    private Label lblPredictionTrend;
+    @FXML
+    private Label lblProgram;
+    @FXML
+    private ComboBox<String> cmbSemesterSelector;
+    @FXML
+    private TableView<Course> tblCourses;
+    @FXML
+    private TableColumn<Course, String> colCourseCode;
+    @FXML
+    private TableColumn<Course, String> colCourseName;
+    @FXML
+    private TableColumn<Course, String> colCategory;
+    @FXML
+    private TableColumn<Course, Integer> colCredits;
+    @FXML
+    private TableColumn<Course, String> colGrade;
+    @FXML
+    private TableColumn<Course, Double> colGradePoints;
+    @FXML
+    private Button btnLogout;
 
     private DatabaseService databaseService;
+    private CGPAPredictionService predictionService;
     private SessionManager sessionManager;
     private String rollNo;
     private List<Course> allCourses;
@@ -48,21 +72,13 @@ public class DashboardController {
         sessionManager = SessionManager.getInstance();
     }
 
-    /**
-     * Initialize dashboard with specific student
-     * Called from LoginController after successful login
-     */
     public void initializeWithStudent(String studentRollNo) {
         this.rollNo = studentRollNo;
         System.out.println("✅ Dashboard initializing for student: " + rollNo);
 
-        // Setup table columns
         setupTableColumns();
-
-        // Load dashboard data
         loadDashboardData();
 
-        // Setup semester selector listener
         if (cmbSemesterSelector != null) {
             cmbSemesterSelector.setOnAction(e -> handleSemesterChange());
         }
@@ -73,101 +89,80 @@ public class DashboardController {
     private void setupTableColumns() {
         System.out.println("🔧 Setting up table columns...");
 
-        colCourseCode.setCellValueFactory(cellData ->
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCourseCode()));
+        colCourseCode.setCellValueFactory(
+                cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCourseCode()));
 
-        colCourseName.setCellValueFactory(cellData ->
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCourseName()));
+        colCourseName.setCellValueFactory(
+                cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCourseName()));
 
-        // FIXED: Category detection now checks credits first, then course name for "LAB"
         colCategory.setCellValueFactory(cellData -> {
             Course course = cellData.getValue();
             String category = extractCategory(course.getCourseCode(), course.getCourseName(), course.getCredits());
             return new javafx.beans.property.SimpleStringProperty(category);
         });
 
-        colCredits.setCellValueFactory(cellData ->
-                new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getCredits()));
+        colCredits.setCellValueFactory(
+                cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getCredits()));
 
-        colGrade.setCellValueFactory(cellData ->
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getGrade()));
+        colGrade.setCellValueFactory(
+                cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().getGrade()));
 
-        colGradePoints.setCellValueFactory(cellData ->
-                new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getGradePoints()));
+        colGradePoints.setCellValueFactory(
+                cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getGradePoints()));
 
         System.out.println("✅ Table columns configured");
     }
 
-    /**
-     * FIXED: Enhanced category extraction with credit-based detection
-     * 1. Checks if credits = 2 (lab courses are typically 2 credits)
-     * 2. Checks course name for "LAB" suffix/contains
-     * 3. Falls back to course code analysis if needed
-     */
     private String extractCategory(String courseCode, String courseName, int credits) {
-        // Primary check: Credits = 2 typically indicates a lab course
-        if (credits == 2) {
+        if (credits == 2)
             return "Laboratory";
-        }
-
-        // Secondary check: Course name ends with "LAB" (case-insensitive)
-        if (courseName != null && courseName.trim().toUpperCase().endsWith("LAB")) {
+        if (courseName != null && courseName.trim().toUpperCase().endsWith("LAB"))
             return "Laboratory";
-        }
-
-        // Tertiary check: Course name contains "LAB" or "LABORATORY" anywhere
         if (courseName != null) {
             String upperName = courseName.trim().toUpperCase();
-            if (upperName.contains("LAB") || upperName.contains("LABORATORY")) {
+            if (upperName.contains("LAB") || upperName.contains("LABORATORY"))
                 return "Laboratory";
-            }
         }
-
-        // Fallback: Check course code pattern (5th-6th digits)
-        // Lab courses typically have codes like: 20CS506, 20CS507, 20CS508, 20CS509
-        if (courseCode != null && courseCode.length() >= 6) {
-            try {
-                String lastTwo = courseCode.substring(4, 6);
-                int num = Integer.parseInt(lastTwo);
-                if (num >= 6 && num <= 9) {
-                    return "Laboratory";
-                }
-            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                // Ignore parsing errors
-            }
-        }
-
-        // Default: Theory course
         return "Theory";
     }
 
     private void loadDashboardData() {
         try {
-            databaseService = new DatabaseService(
-                    com.psgtech.studentportal.database.DatabaseManager.getInstance()
-            );
+            DatabaseManager dbManager = DatabaseManager.getInstance();
+            databaseService = new DatabaseService(dbManager);
+            predictionService = new CGPAPredictionService(dbManager);
 
             // Load student info
             Student student = databaseService.getStudent(rollNo);
             if (student != null) {
                 lblWelcome.setText("Welcome, " + student.getName() + "!");
                 lblCurrentSemester.setText(String.valueOf(student.getCurrentSemester()));
+
+                // Update semester progress label
+                int totalSem = student.getTotalSemesters() > 0 ? student.getTotalSemesters() : 8;
+                if (lblSemesterProgress != null) {
+                    lblSemesterProgress.setText("Semester " + student.getCurrentSemester() + " of " + totalSem);
+                }
+
+                // Display program
+                if (lblProgram != null) {
+                    String program = student.getProgram();
+                    if (program != null && !program.isEmpty()) {
+                        lblProgram.setText("Program: " + program + " (" + totalSem + " sem)");
+                    } else {
+                        lblProgram.setText("Program: Not detected (" + totalSem + " sem)");
+                    }
+                }
+
+                // Load CGPA prediction
+                loadCGPAPrediction(student);
             }
 
             // Load all courses
             allCourses = databaseService.getCourses(rollNo);
             System.out.println("📚 Loaded " + allCourses.size() + " courses from database");
 
-            // Debug: Show category classification for first few courses
-            System.out.println("📋 Course categories:");
-            for (int i = 0; i < Math.min(5, allCourses.size()); i++) {
-                Course c = allCourses.get(i);
-                String category = extractCategory(c.getCourseCode(), c.getCourseName(), c.getCredits());
-                System.out.println("  " + c.getCourseCode() + " - " + c.getCourseName() +
-                        " (Credits: " + c.getCredits() + ") → " + category);
-            }
-
-            // Get unique semesters and sort
+            // Get unique semesters
             Set<Integer> semesters = allCourses.stream()
                     .map(Course::getSemester)
                     .collect(Collectors.toSet());
@@ -184,10 +179,7 @@ public class DashboardController {
             cmbSemesterSelector.setItems(semesterOptions);
             cmbSemesterSelector.setValue("All Semesters");
 
-            // Load CGPA records
             loadCGPARecords();
-
-            // Display all courses initially
             displayAllCourses();
 
             System.out.println("✅ Dashboard loaded for " + rollNo);
@@ -199,9 +191,37 @@ public class DashboardController {
         }
     }
 
+    private void loadCGPAPrediction(Student student) {
+        try {
+            int totalSemesters = student.getTotalSemesters() > 0 ? student.getTotalSemesters() : 8;
+            CGPAPredictionService.CGPAPrediction prediction = predictionService.predictFinalCGPA(rollNo,
+                    totalSemesters);
+
+            if (prediction != null && prediction.getPredictedCGPA() > 0) {
+                if (lblPredictedCGPA != null) {
+                    lblPredictedCGPA.setText(prediction.getFormattedPrediction());
+                }
+                if (lblPredictionTrend != null) {
+                    lblPredictionTrend.setText(prediction.getTrend());
+                }
+                System.out.println("✅ Prediction loaded: " + prediction.getFormattedPrediction());
+            } else {
+                if (lblPredictedCGPA != null)
+                    lblPredictedCGPA.setText("--");
+                if (lblPredictionTrend != null)
+                    lblPredictionTrend.setText("Need more data");
+            }
+        } catch (SQLException e) {
+            System.err.println("⚠️ Could not load prediction: " + e.getMessage());
+            if (lblPredictedCGPA != null)
+                lblPredictedCGPA.setText("--");
+            if (lblPredictionTrend != null)
+                lblPredictionTrend.setText("Unavailable");
+        }
+    }
+
     private void loadCGPARecords() throws SQLException {
         cgpaRecords = new HashMap<>();
-
         List<Course> courses = databaseService.getCourses(rollNo);
         Map<Integer, List<Course>> coursesBySemester = courses.stream()
                 .collect(Collectors.groupingBy(Course::getSemester));
@@ -236,7 +256,6 @@ public class DashboardController {
             }
         }
 
-        // Display overall CGPA
         if (!cgpaRecords.isEmpty()) {
             int maxSem = Collections.max(cgpaRecords.keySet());
             CGPARecord latest = cgpaRecords.get(maxSem);
@@ -260,17 +279,14 @@ public class DashboardController {
 
         if (selected == null || selected.equals("All Semesters")) {
             displayAllCourses();
-
             if (!cgpaRecords.isEmpty()) {
                 int maxSem = Collections.max(cgpaRecords.keySet());
                 CGPARecord latest = cgpaRecords.get(maxSem);
                 lblCGPA.setText(String.format("%.2f", latest.getCgpa()));
                 lblCurrentGPA.setText(String.format("%.2f", latest.getGpa()));
             }
-
         } else {
             int semester = Integer.parseInt(selected.replace("Semester ", ""));
-
             List<Course> semesterCourses = allCourses.stream()
                     .filter(c -> c.getSemester() == semester)
                     .collect(Collectors.toList());
@@ -288,6 +304,31 @@ public class DashboardController {
             }
 
             System.out.println("📋 Displaying " + semesterCourses.size() + " courses for Semester " + semester);
+        }
+    }
+
+    @FXML
+    private void handleViewPrediction() {
+        try {
+            System.out.println("📊 Navigating to prediction analytics...");
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/PredictionView.fxml"));
+            Parent root = loader.load();
+
+            PredictionController controller = loader.getController();
+            controller.initializeWithStudent(rollNo);
+
+            Stage stage = (Stage) tblCourses.getScene().getWindow();
+            Scene scene = new Scene(root, 1200, 800);
+            scene.getStylesheets().add(getClass().getResource("/styles/style.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setTitle("Trackademia - CGPA Prediction Analytics");
+
+            System.out.println("✅ Navigated to prediction analytics");
+        } catch (IOException e) {
+            System.err.println("❌ Error loading prediction view: " + e.getMessage());
+            e.printStackTrace();
+            showError("Failed to load prediction analytics: " + e.getMessage());
         }
     }
 

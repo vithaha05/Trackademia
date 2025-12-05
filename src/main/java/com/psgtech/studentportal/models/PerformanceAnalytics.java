@@ -12,6 +12,7 @@ public class PerformanceAnalytics {
     private String rollNo;
     private int semester;
     private String courseCode;
+    private String courseName; // Course name for display
 
     // Current performance metrics
     private double currentCGPA;
@@ -33,7 +34,8 @@ public class PerformanceAnalytics {
     private SemesterTrend semesterTrend;
     private RiskAnalysis riskAnalysis;
 
-    public PerformanceAnalytics() {}
+    public PerformanceAnalytics() {
+    }
 
     // Getters and Setters
     public int getId() {
@@ -66,6 +68,14 @@ public class PerformanceAnalytics {
 
     public void setCourseCode(String courseCode) {
         this.courseCode = courseCode;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
     }
 
     public double getCurrentCGPA() {
@@ -212,7 +222,8 @@ public class PerformanceAnalytics {
         private double trendPercentage;
         private List<Double> semesterGPAs;
 
-        public SemesterTrend() {}
+        public SemesterTrend() {
+        }
 
         public SemesterTrend(String trend, double trendPercentage, List<Double> semesterGPAs) {
             this.trend = trend;
@@ -263,7 +274,8 @@ public class PerformanceAnalytics {
         private List<String> riskFactors;
         private String interventionRequired; // "None", "Monitor", "Immediate"
 
-        public RiskAnalysis() {}
+        public RiskAnalysis() {
+        }
 
         public RiskAnalysis(String riskLevel, double riskScore, List<String> riskFactors, String interventionRequired) {
             this.riskLevel = riskLevel;

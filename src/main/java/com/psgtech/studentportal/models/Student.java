@@ -9,10 +9,13 @@ import java.time.LocalDate;
 public class Student {
     private String rollNo;
     private String name;
-    private LocalDate dateOfBirth;  // Changed to LocalDate
+    private LocalDate dateOfBirth; // Changed to LocalDate
     private String department;
     private String batch;
-    private int currentSemester;  // Changed to int
+    private int currentSemester; // Changed to int
+    private String program;
+    private String programCategory;
+    private int totalSemesters;
 
     // Default Constructor
     public Student() {
@@ -20,7 +23,7 @@ public class Student {
 
     // Parameterized Constructor
     public Student(String rollNo, String name, LocalDate dateOfBirth,
-                   String department, String batch, int currentSemester) {
+            String department, String batch, int currentSemester) {
         this.rollNo = rollNo;
         this.name = name;
         this.dateOfBirth = dateOfBirth;
@@ -54,6 +57,18 @@ public class Student {
         return currentSemester;
     }
 
+    public String getProgram() {
+        return program;
+    }
+
+    public String getProgramCategory() {
+        return programCategory;
+    }
+
+    public int getTotalSemesters() {
+        return totalSemesters;
+    }
+
     // Setters
     public void setRollNo(String rollNo) {
         this.rollNo = rollNo;
@@ -77,6 +92,18 @@ public class Student {
 
     public void setCurrentSemester(int currentSemester) {
         this.currentSemester = currentSemester;
+    }
+
+    public void setProgram(String program) {
+        this.program = program;
+    }
+
+    public void setProgramCategory(String programCategory) {
+        this.programCategory = programCategory;
+    }
+
+    public void setTotalSemesters(int totalSemesters) {
+        this.totalSemesters = totalSemesters;
     }
 
     @Override

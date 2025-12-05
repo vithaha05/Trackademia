@@ -13,9 +13,9 @@ public class DatabaseManager {
     private Connection connection;
 
     // MySQL Connection Details - UPDATE THESE WITH YOUR CREDENTIALS
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/psgtech_portal?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-    private static final String DB_USER = "root";  // Change if you use different username
-    private static final String DB_PASSWORD = "qwerty";  // ⚠️ CHANGE THIS TO YOUR MYSQL PASSWORD!
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/student_portal?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String DB_USER = "root"; // Change if you use different username
+    private static final String DB_PASSWORD = "qwerty"; // ⚠️ CHANGE THIS TO YOUR MYSQL PASSWORD!
 
     private DatabaseManager() {
         try {
@@ -71,148 +71,306 @@ public class DatabaseManager {
 
             // Students table
             String createStudentsTable = """
-                CREATE TABLE IF NOT EXISTS students (
-                    roll_no VARCHAR(20) PRIMARY KEY,
-                    name VARCHAR(100) NOT NULL,
-                    date_of_birth DATE,
-                    department VARCHAR(50),
-                    batch VARCHAR(10),
-                    current_semester INT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """;
+                        CREATE TABLE IF NOT EXISTS students (
+                            roll_no VARCHAR(20) PRIMARY KEY,
+                            name VARCHAR(100) NOT NULL,
+                            date_of_birth DATE,
+                            department VARCHAR(50),
+                            batch VARCHAR(10),
+                            current_semester INT,
+                            program VARCHAR(100),
+                            total_semesters INT DEFAULT 8,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """;
             stmt.execute(createStudentsTable);
+
+            // Add program columns if they don't exist (for existing tables)
+            try {
+                stmt.execute("ALTER TABLE students ADD COLUMN program VARCHAR(100)");
+            } catch (SQLException e) {
+                /* Column already exists */ }
+            try {
+                stmt.execute("ALTER TABLE students ADD COLUMN total_semesters INT DEFAULT 8");
+            } catch (SQLException e) {
+                /* Column already exists */ }
+
             System.out.println("✅ Table 'students' created/verified");
 
             // Courses table
             String createCoursesTable = """
-                CREATE TABLE IF NOT EXISTS courses (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    roll_no VARCHAR(20),
-                    semester INT NOT NULL,
-                    course_code VARCHAR(20) NOT NULL,
-                    course_name VARCHAR(200) NOT NULL,
-                    credits INT NOT NULL,
-                    grade VARCHAR(5),
-                    grade_points DECIMAL(3,1),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_course (roll_no, course_code, semester),
-                    FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """;
+                        CREATE TABLE IF NOT EXISTS courses (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            roll_no VARCHAR(20),
+                            semester INT NOT NULL,
+                            course_code VARCHAR(20) NOT NULL,
+                            course_name VARCHAR(200) NOT NULL,
+                            credits INT NOT NULL,
+                            grade VARCHAR(5),
+                            grade_points DECIMAL(3,1),
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE KEY unique_course (roll_no, course_code, semester),
+                            FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """;
             stmt.execute(createCoursesTable);
             System.out.println("✅ Table 'courses' created/verified");
 
             // Internal Marks table
             // Update your internal_marks table creation in DatabaseManager.java
-// Find the createTables() method and replace the internal_marks creation with this:
+            // Find the createTables() method and replace the internal_marks creation with
+            // this:
 
             String createInternalMarksTable = """
-    CREATE TABLE IF NOT EXISTS internal_marks (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        roll_no VARCHAR(20) NOT NULL,
-        semester INT NOT NULL,
-        course_code VARCHAR(20) NOT NULL,
-        course_name VARCHAR(255),
-        total_internal_marks DOUBLE,
-        max_marks DOUBLE NOT NULL DEFAULT 50.0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_internal (roll_no, semester, course_code),
-        INDEX idx_rollno (roll_no),
-        INDEX idx_semester (semester)
-    )
-""";
+                        CREATE TABLE IF NOT EXISTS internal_marks (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            roll_no VARCHAR(20) NOT NULL,
+                            semester INT NOT NULL,
+                            course_code VARCHAR(20) NOT NULL,
+                            course_name VARCHAR(255),
+                            total_internal_marks DOUBLE,
+                            max_marks DOUBLE NOT NULL DEFAULT 50.0,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                            UNIQUE KEY unique_internal (roll_no, semester, course_code),
+                            INDEX idx_rollno (roll_no),
+                            INDEX idx_semester (semester)
+                        )
+                    """;
             stmt.execute(createInternalMarksTable);
             System.out.println("✅ Table 'internal_marks' created/verified");
             // End Semester Marks table
             String createEndSemMarksTable = """
-                CREATE TABLE IF NOT EXISTS endsem_marks (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    roll_no VARCHAR(20),
-                    semester INT NOT NULL,
-                    course_code VARCHAR(20) NOT NULL,
-                    course_name VARCHAR(200) NOT NULL,
-                    endsem_marks DECIMAL(5,2),
-                    max_marks DECIMAL(5,2) DEFAULT 100,
-                    final_marks DECIMAL(5,2),
-                    grade VARCHAR(5),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_endsem (roll_no, course_code, semester),
-                    FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """;
+                        CREATE TABLE IF NOT EXISTS endsem_marks (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            roll_no VARCHAR(20),
+                            semester INT NOT NULL,
+                            course_code VARCHAR(20) NOT NULL,
+                            course_name VARCHAR(200) NOT NULL,
+                            endsem_marks DECIMAL(5,2),
+                            max_marks DECIMAL(5,2) DEFAULT 100,
+                            final_marks DECIMAL(5,2),
+                            grade VARCHAR(5),
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                            UNIQUE KEY unique_endsem (roll_no, course_code, semester),
+                            FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """;
             stmt.execute(createEndSemMarksTable);
             System.out.println("✅ Table 'endsem_marks' created/verified");
 
             // CGPA History table
             String createCGPATable = """
-                CREATE TABLE IF NOT EXISTS cgpa_history (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    roll_no VARCHAR(20),
-                    semester INT NOT NULL,
-                    gpa DECIMAL(4,3),
-                    cgpa DECIMAL(4,3),
-                    total_credits INT,
-                    has_backlogs BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_cgpa (roll_no, semester),
-                    FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """;
+                        CREATE TABLE IF NOT EXISTS cgpa_history (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            roll_no VARCHAR(20),
+                            semester INT NOT NULL,
+                            gpa DECIMAL(4,3),
+                            cgpa DECIMAL(4,3),
+                            total_credits INT,
+                            has_backlogs BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE KEY unique_cgpa (roll_no, semester),
+                            FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """;
             stmt.execute(createCGPATable);
             System.out.println("✅ Table 'cgpa_history' created/verified");
 
             // ML Training Data table (for performance prediction)
             String createMLDataTable = """
-                CREATE TABLE IF NOT EXISTS ml_training_data (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    roll_no VARCHAR(20),
-                    semester INT NOT NULL,
-                    course_code VARCHAR(20) NOT NULL,
-                    internal_marks DECIMAL(5,2),
-                    endsem_marks DECIMAL(5,2),
-                    final_marks DECIMAL(5,2),
-                    class_average_internal DECIMAL(5,2),
-                    class_average_endsem DECIMAL(5,2),
-                    percentile_rank DECIMAL(5,2),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE,
-                    INDEX idx_course (course_code),
-                    INDEX idx_semester (semester)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """;
+                        CREATE TABLE IF NOT EXISTS ml_training_data (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            roll_no VARCHAR(20),
+                            semester INT NOT NULL,
+                            course_code VARCHAR(20) NOT NULL,
+                            internal_marks DECIMAL(5,2),
+                            endsem_marks DECIMAL(5,2),
+                            final_marks DECIMAL(5,2),
+                            class_average_internal DECIMAL(5,2),
+                            class_average_endsem DECIMAL(5,2),
+                            percentile_rank DECIMAL(5,2),
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE,
+                            INDEX idx_course (course_code),
+                            INDEX idx_semester (semester)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """;
             stmt.execute(createMLDataTable);
             System.out.println("✅ Table 'ml_training_data' created/verified");
 
             // Performance Analytics table
             String createAnalyticsTable = """
-                CREATE TABLE IF NOT EXISTS performance_analytics (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    roll_no VARCHAR(20),
-                    semester INT NOT NULL,
-                    course_code VARCHAR(20) NOT NULL,
-                    predicted_endsem_score DECIMAL(5,2),
-                    improvement_needed DECIMAL(5,2),
-                    class_percentile DECIMAL(5,2),
-                    recommendation TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_analytics (roll_no, course_code, semester),
-                    FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """;
+                        CREATE TABLE IF NOT EXISTS performance_analytics (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            roll_no VARCHAR(20),
+                            semester INT NOT NULL,
+                            course_code VARCHAR(20) NOT NULL,
+                            predicted_endsem_score DECIMAL(5,2),
+                            improvement_needed DECIMAL(5,2),
+                            class_percentile DECIMAL(5,2),
+                            recommendation TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE KEY unique_analytics (roll_no, course_code, semester),
+                            FOREIGN KEY (roll_no) REFERENCES students(roll_no) ON DELETE CASCADE
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """;
             stmt.execute(createAnalyticsTable);
             System.out.println("✅ Table 'performance_analytics' created/verified");
 
             System.out.println("\n🎉 All database tables initialized successfully!");
             stmt.close();
 
+            // Populate sample ML training data for realistic predictions
+            populateSampleMLData();
+
         } catch (SQLException e) {
             System.err.println("❌ Error initializing database tables!");
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Populate sample ML training data for realistic predictions
+     * This creates synthetic historical data showing correlation between
+     * internal marks and end-semester performance
+     */
+    public void populateSampleMLData() {
+        System.out.println("\n🤖 Populating ML training data...");
+
+        try {
+            // First check if data already exists
+            String checkSql = "SELECT COUNT(*) FROM ml_training_data";
+            Statement checkStmt = connection.createStatement();
+            ResultSet rs = checkStmt.executeQuery(checkSql);
+            rs.next();
+            int existingCount = rs.getInt(1);
+            rs.close();
+            checkStmt.close();
+
+            if (existingCount > 50) {
+                System.out.println("ℹ️ ML training data already populated (" + existingCount + " records)");
+                return;
+            }
+
+            // Sample course patterns - covers theory and lab courses
+            String[] courseCodes = {
+                    "23XT51", "23XT52", "23XT53", "23XT54", "23XTE2", // Semester 5 theory
+                    "23XT13", "23XT14", "23XT15", "23XT16", "23XT17", "23XT18", // Common courses
+                    "22XT31", "22XT32", "22XT33", "22XT34", "22XT35", // Previous semesters
+                    "21XT21", "21XT22", "21XT23", "21XT24"
+            };
+
+            String insertSql = """
+                        INSERT INTO ml_training_data
+                        (roll_no, semester, course_code, internal_marks, endsem_marks, final_marks)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE internal_marks = VALUES(internal_marks)
+                    """;
+
+            PreparedStatement pstmt = connection.prepareStatement(insertSql);
+            int totalRecords = 0;
+
+            // Generate realistic training data for each course
+            java.util.Random random = new java.util.Random(42); // Fixed seed for reproducibility
+
+            for (String courseCode : courseCodes) {
+                // Determine semester from course code
+                int semester = 5; // Default
+                if (courseCode.startsWith("22"))
+                    semester = 3;
+                else if (courseCode.startsWith("21"))
+                    semester = 2;
+                else if (courseCode.contains("T1"))
+                    semester = 1;
+                else if (courseCode.contains("T2"))
+                    semester = 2;
+                else if (courseCode.contains("T3"))
+                    semester = 3;
+                else if (courseCode.contains("T4"))
+                    semester = 4;
+                else if (courseCode.contains("T5"))
+                    semester = 5;
+
+                // Generate 30-50 data points per course for good regression
+                int dataPoints = 30 + random.nextInt(20);
+
+                for (int i = 0; i < dataPoints; i++) {
+                    // Generate synthetic roll numbers
+                    String syntheticRollNo = "TRAIN" + String.format("%04d", totalRecords);
+
+                    // Internal marks (out of 50) - realistic distribution
+                    double internalMarks = generateRealisticInternalMarks(random);
+
+                    // End-sem marks correlate with internal but with noise
+                    // Realistic correlation: students who do well in internal tend to do well in
+                    // endsem
+                    double endsemMarks = generateCorrelatedEndsemMarks(internalMarks, random);
+
+                    // Final marks = weighted average (typically 40% internal + 60% endsem scaled)
+                    double finalMarks = (internalMarks / 50.0 * 40.0) + (endsemMarks / 100.0 * 60.0);
+
+                    pstmt.setString(1, syntheticRollNo);
+                    pstmt.setInt(2, semester);
+                    pstmt.setString(3, courseCode);
+                    pstmt.setDouble(4, internalMarks);
+                    pstmt.setDouble(5, endsemMarks);
+                    pstmt.setDouble(6, finalMarks);
+                    pstmt.addBatch();
+
+                    totalRecords++;
+                }
+            }
+
+            pstmt.executeBatch();
+            pstmt.close();
+
+            System.out.println(
+                    "✅ Populated " + totalRecords + " ML training records for " + courseCodes.length + " courses");
+
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error populating ML training data: " + e.getMessage());
+            // Non-fatal - app can still work without training data
+        }
+    }
+
+    /**
+     * Generate realistic internal marks distribution
+     * Most students score between 25-45 out of 50
+     */
+    private double generateRealisticInternalMarks(java.util.Random random) {
+        // Use a skewed distribution - most students do reasonably well
+        double base = 30 + random.nextGaussian() * 8;
+        // Clamp between 10 and 50
+        return Math.max(10, Math.min(50, base));
+    }
+
+    /**
+     * Generate end-sem marks correlated with internal marks
+     * Correlation is not perfect - some students improve, others decline
+     */
+    private double generateCorrelatedEndsemMarks(double internalMarks, java.util.Random random) {
+        // Base prediction: scale internal to 100
+        double expectedEndsem = (internalMarks / 50.0) * 100.0;
+
+        // Add realistic variation (standard deviation ~15)
+        double noise = random.nextGaussian() * 15;
+
+        // Some students improve significantly in endsem (10% chance)
+        if (random.nextDouble() < 0.1) {
+            noise += 15;
+        }
+        // Some students do worse (15% chance)
+        if (random.nextDouble() < 0.15) {
+            noise -= 10;
+        }
+
+        double endsemMarks = expectedEndsem + noise;
+
+        // Clamp between 0 and 100
+        return Math.max(0, Math.min(100, endsemMarks));
     }
 
     /**
@@ -260,7 +418,7 @@ public class DatabaseManager {
     public void listTables() {
         try {
             DatabaseMetaData metaData = connection.getMetaData();
-            ResultSet tables = metaData.getTables(null, null, "%", new String[]{"TABLE"});
+            ResultSet tables = metaData.getTables(null, null, "%", new String[] { "TABLE" });
 
             System.out.println("\n📋 Tables in database:");
             while (tables.next()) {

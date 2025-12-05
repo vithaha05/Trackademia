@@ -23,25 +23,28 @@ public class DatabaseService {
      */
     public void saveStudent(Student student) throws SQLException {
         String sql = """
-            INSERT INTO students (roll_no, name, date_of_birth, department, batch, current_semester)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                name = VALUES(name),
-                date_of_birth = VALUES(date_of_birth),
-                department = VALUES(department),
-                batch = VALUES(batch),
-                current_semester = VALUES(current_semester),
-                updated_at = CURRENT_TIMESTAMP
-        """;
+                    INSERT INTO students (roll_no, name, date_of_birth, department, batch, current_semester, program, total_semesters)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        date_of_birth = VALUES(date_of_birth),
+                        department = VALUES(department),
+                        batch = VALUES(batch),
+                        current_semester = VALUES(current_semester),
+                        program = VALUES(program),
+                        total_semesters = VALUES(total_semesters),
+                        updated_at = CURRENT_TIMESTAMP
+                """;
 
         try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
             stmt.setString(1, student.getRollNo());
             stmt.setString(2, student.getName());
-            stmt.setDate(3, student.getDateOfBirth() != null ?
-                    Date.valueOf(student.getDateOfBirth()) : null);
+            stmt.setDate(3, student.getDateOfBirth() != null ? Date.valueOf(student.getDateOfBirth()) : null);
             stmt.setString(4, student.getDepartment());
             stmt.setString(5, student.getBatch());
             stmt.setInt(6, student.getCurrentSemester());
+            stmt.setString(7, student.getProgram());
+            stmt.setInt(8, student.getTotalSemesters() > 0 ? student.getTotalSemesters() : 8);
             stmt.executeUpdate();
             System.out.println("✅ Student saved: " + student.getRollNo());
         }
@@ -52,13 +55,13 @@ public class DatabaseService {
      */
     public void saveInternalMarks(InternalMarks internal) throws SQLException {
         String sql = """
-            INSERT INTO internal_marks 
-            (roll_no, semester, course_code, course_name, total_internal_marks, max_marks)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                total_internal_marks = VALUES(total_internal_marks),
-                updated_at = CURRENT_TIMESTAMP
-        """;
+                    INSERT INTO internal_marks
+                    (roll_no, semester, course_code, course_name, total_internal_marks, max_marks)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        total_internal_marks = VALUES(total_internal_marks),
+                        updated_at = CURRENT_TIMESTAMP
+                """;
 
         try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
             stmt.setString(1, internal.getRollNo());
@@ -82,16 +85,16 @@ public class DatabaseService {
      */
     public void saveEndSemMarks(EndSemMarks endsem) throws SQLException {
         String sql = """
-            INSERT INTO endsem_marks 
-            (roll_no, semester, course_code, course_name, endsem_marks, 
-             max_marks, final_marks, grade)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                endsem_marks = VALUES(endsem_marks),
-                final_marks = VALUES(final_marks),
-                grade = VALUES(grade),
-                updated_at = CURRENT_TIMESTAMP
-        """;
+                    INSERT INTO endsem_marks
+                    (roll_no, semester, course_code, course_name, endsem_marks,
+                     max_marks, final_marks, grade)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        endsem_marks = VALUES(endsem_marks),
+                        final_marks = VALUES(final_marks),
+                        grade = VALUES(grade),
+                        updated_at = CURRENT_TIMESTAMP
+                """;
 
         try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
             stmt.setString(1, endsem.getRollNo());
@@ -123,13 +126,13 @@ public class DatabaseService {
      */
     public void saveCourse(Course course) throws SQLException {
         String sql = """
-            INSERT INTO courses 
-            (roll_no, semester, course_code, course_name, credits, grade, grade_points)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                grade = VALUES(grade),
-                grade_points = VALUES(grade_points)
-        """;
+                    INSERT INTO courses
+                    (roll_no, semester, course_code, course_name, credits, grade, grade_points)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        grade = VALUES(grade),
+                        grade_points = VALUES(grade_points)
+                """;
 
         try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
             stmt.setString(1, course.getRollNo());
@@ -148,15 +151,15 @@ public class DatabaseService {
      */
     public void saveCGPARecord(CGPARecord record) throws SQLException {
         String sql = """
-            INSERT INTO cgpa_history 
-            (roll_no, semester, gpa, cgpa, total_credits, has_backlogs)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                gpa = VALUES(gpa),
-                cgpa = VALUES(cgpa),
-                total_credits = VALUES(total_credits),
-                has_backlogs = VALUES(has_backlogs)
-        """;
+                    INSERT INTO cgpa_history
+                    (roll_no, semester, gpa, cgpa, total_credits, has_backlogs)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        gpa = VALUES(gpa),
+                        cgpa = VALUES(cgpa),
+                        total_credits = VALUES(total_credits),
+                        has_backlogs = VALUES(has_backlogs)
+                """;
 
         try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
             stmt.setString(1, record.getRollNo());
@@ -190,10 +193,10 @@ public class DatabaseService {
      */
     public List<InternalMarks> getInternalMarks(String rollNo) throws SQLException {
         String sql = """
-            SELECT * FROM internal_marks 
-            WHERE roll_no = ? 
-            ORDER BY semester DESC, course_code
-        """;
+                    SELECT * FROM internal_marks
+                    WHERE roll_no = ?
+                    ORDER BY semester DESC, course_code
+                """;
 
         List<InternalMarks> internalsList = new ArrayList<>();
 
@@ -228,10 +231,10 @@ public class DatabaseService {
      */
     public List<EndSemMarks> getEndSemMarks(String rollNo) throws SQLException {
         String sql = """
-            SELECT * FROM endsem_marks 
-            WHERE roll_no = ? 
-            ORDER BY semester DESC, course_code
-        """;
+                    SELECT * FROM endsem_marks
+                    WHERE roll_no = ?
+                    ORDER BY semester DESC, course_code
+                """;
 
         List<EndSemMarks> endsemList = new ArrayList<>();
 
@@ -273,10 +276,10 @@ public class DatabaseService {
      */
     public List<CGPARecord> getCGPAHistory(String rollNo) throws SQLException {
         String sql = """
-            SELECT * FROM cgpa_history 
-            WHERE roll_no = ? 
-            ORDER BY semester
-        """;
+                    SELECT * FROM cgpa_history
+                    WHERE roll_no = ?
+                    ORDER BY semester
+                """;
 
         List<CGPARecord> cgpaList = new ArrayList<>();
 
@@ -319,10 +322,10 @@ public class DatabaseService {
      */
     public List<Course> getCourses(String rollNo) throws SQLException {
         String sql = """
-            SELECT * FROM courses 
-            WHERE roll_no = ? 
-            ORDER BY semester, course_code
-        """;
+                    SELECT * FROM courses
+                    WHERE roll_no = ?
+                    ORDER BY semester, course_code
+                """;
 
         List<Course> coursesList = new ArrayList<>();
 
@@ -352,13 +355,13 @@ public class DatabaseService {
      * Save ML training data
      */
     public void saveMLTrainingData(String rollNo, int semester, String courseCode,
-                                   double internalMarks, double endsemMarks,
-                                   double finalMarks) throws SQLException {
+            double internalMarks, double endsemMarks,
+            double finalMarks) throws SQLException {
         String sql = """
-            INSERT INTO ml_training_data 
-            (roll_no, semester, course_code, internal_marks, endsem_marks, final_marks)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """;
+                    INSERT INTO ml_training_data
+                    (roll_no, semester, course_code, internal_marks, endsem_marks, final_marks)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """;
 
         try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
             stmt.setString(1, rollNo);
@@ -394,6 +397,8 @@ public class DatabaseService {
                 student.setDepartment(rs.getString("department"));
                 student.setBatch(rs.getString("batch"));
                 student.setCurrentSemester(rs.getInt("current_semester"));
+                student.setProgram(rs.getString("program"));
+                student.setTotalSemesters(rs.getInt("total_semesters"));
                 rs.close();
                 return student;
             }

@@ -116,7 +116,7 @@ public class SessionManager {
         System.out.println("🔐 Logging into Studzone2...");
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(300); // Reduced from 1000ms
 
             Connection.Response loginPageResponse = Jsoup.connect(STUDZONE2_URL)
                     .method(Connection.Method.GET)
@@ -161,7 +161,7 @@ public class SessionManager {
 
             studzone2Cookies.putAll(loginResponse.cookies());
 
-            Thread.sleep(1500);
+            Thread.sleep(500); // Reduced from 1500ms
 
             // Initialize by visiting main page
             initializeStudzone2Session();
@@ -182,7 +182,8 @@ public class SessionManager {
      * Initialize Studzone2 session by visiting main page
      */
     private void initializeStudzone2Session() throws IOException {
-        if (studzone2Initialized) return;
+        if (studzone2Initialized)
+            return;
 
         try {
             System.out.println("🔄 Initializing Studzone2 session...");
@@ -224,7 +225,7 @@ public class SessionManager {
                 studzone2Initialized = true; // Proceed anyway
             }
 
-            Thread.sleep(1000);
+            Thread.sleep(200); // Reduced from 1000ms
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -281,9 +282,10 @@ public class SessionManager {
                     studzone2Cookies.putAll(response.cookies());
                     return response.parse();
                 } else if (statusCode == 500 && retryCount < maxRetries - 1) {
-                    System.out.println("⚠️ Got 500 error, retrying after session refresh... (attempt " + (retryCount + 1) + ")");
+                    System.out.println(
+                            "⚠️ Got 500 error, retrying after session refresh... (attempt " + (retryCount + 1) + ")");
                     studzone2Initialized = false;
-                    Thread.sleep(2000);
+                    Thread.sleep(1000); // Reduced from 2000ms
                     retryCount++;
                     continue;
                 } else {
@@ -298,7 +300,7 @@ public class SessionManager {
                     System.out.println("⚠️ Fetch failed, retrying... (attempt " + (retryCount + 1) + ")");
                     retryCount++;
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(1000); // Reduced from 2000ms
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                     }

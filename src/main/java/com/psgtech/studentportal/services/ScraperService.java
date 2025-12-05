@@ -115,6 +115,80 @@ public class ScraperService {
             student.setName(name);
             student.setCurrentSemester(currentSemester);
 
+            // Fetch program info from attendance page
+            try {
+                String attendanceUrl = "https://ecampus.psgtech.ac.in/studzone/Attendance/StudentPercentage";
+                Document attendancePage = sessionManager.fetchStudzone1Page(attendanceUrl);
+
+                String program = "";
+
+                // Debug: Print page structure
+                System.out.println("🔍 Searching for program info on attendance page...");
+
+                // Method 1: Look for common label patterns
+                Elements allElements = attendancePage.select("td, th, span, label, div");
+                for (Element el : allElements) {
+                    String text = el.text().trim();
+                    // Check if this element contains program keywords
+                    if (text.toUpperCase().contains("M.SC") || text.toUpperCase().contains("MSC") ||
+                            text.toUpperCase().contains("THEORETICAL") || text.toUpperCase().contains("CYBER") ||
+                            text.toUpperCase().contains("DATA SCIENCE")
+                            || text.toUpperCase().contains("SOFTWARE SYSTEMS")) {
+                        System.out.println("🔍 Found potential program text: " + text);
+                        if (program.isEmpty()) {
+                            program = extractProgramFromText(text);
+                        }
+                    }
+                }
+
+                // Method 2: Check the entire page body for program keywords
+                if (program.isEmpty()) {
+                    String bodyText = attendancePage.body().text();
+                    System.out.println("🔍 Searching full page text for program...");
+
+                    // Look for specific program names
+                    String[] programPatterns = {
+                            "M.Sc. Theoretical Computer Science",
+                            "M.Sc Theoretical Computer Science",
+                            "MSc Theoretical Computer Science",
+                            "M.Sc. Cyber Security",
+                            "M.Sc. Data Science",
+                            "M.Sc. Software Systems",
+                            "B.E. Computer Science",
+                            "B.Tech"
+                    };
+
+                    for (String pattern : programPatterns) {
+                        if (bodyText.toLowerCase().contains(pattern.toLowerCase())) {
+                            program = pattern;
+                            System.out.println("🔍 Found program in body text: " + program);
+                            break;
+                        }
+                    }
+                }
+
+                // Method 3: If still empty, try to infer from roll number
+                if (program.isEmpty()) {
+                    program = inferProgramFromRollNo(currentRollNo);
+                    System.out.println("🔍 Inferred from roll number: " + program);
+                }
+
+                if (!program.isEmpty()) {
+                    student.setProgram(program);
+                    int totalSemesters = determineTotalSemesters(program);
+                    student.setTotalSemesters(totalSemesters);
+                    System.out.println("✅ Program detected: " + program + " (" + totalSemesters + " semesters)");
+                } else {
+                    // Default to 8 semesters for engineering
+                    student.setTotalSemesters(8);
+                    System.out.println("⚠️ Could not detect program, defaulting to 8 semesters");
+                }
+
+            } catch (Exception e) {
+                System.out.println("⚠️ Could not fetch program info: " + e.getMessage());
+                student.setTotalSemesters(8); // Default
+            }
+
             // Try to get additional info from scholarship page
             try {
                 String scholarshipUrl = "https://ecampus.psgtech.ac.in/studzone/Scholar/VallalarScholarship";
@@ -144,6 +218,130 @@ public class ScraperService {
     }
 
     /**
+     * Extract program name from text
+     */
+    private String extractProgramFromText(String text) {
+        // Try specific program patterns first (more precise)
+        String[] specificPatterns = {
+                "MSc\\s+CYBER\\s+SECURITY",
+                "MSc\\s+THEORETICAL\\s+COMPUTER\\s+SCIENCE",
+                "MSc\\s+DATA\\s+SCIENCE",
+                "MSc\\s+SOFTWARE\\s+SYSTEMS",
+                "M\\.Sc\\.?\\s+[A-Za-z\\s]+",
+                "B\\.E\\.?\\s+[A-Za-z\\s]+",
+                "B\\.Tech\\.?\\s+[A-Za-z\\s]+"
+        };
+
+        for (String pattern : specificPatterns) {
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern,
+                    java.util.regex.Pattern.CASE_INSENSITIVE);
+            java.util.regex.Matcher m = p.matcher(text);
+            if (m.find()) {
+                String found = m.group().trim();
+                // Normalize MSc to M.Sc.
+                if (found.toUpperCase().startsWith("MSC ")) {
+                    found = "M.Sc." + found.substring(3);
+                }
+                System.out.println("🔍 Extracted program: " + found);
+                return found;
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Infer program from roll number pattern
+     * PSG Tech roll number format: YYDCXX where YY=year, DC=dept code, XX=number
+     * Examples: 23PT40 = 2023 batch, PT = Theoretical CS, 40 = roll number
+     */
+    private String inferProgramFromRollNo(String rollNo) {
+        if (rollNo == null || rollNo.length() < 4)
+            return "";
+
+        String prefix = rollNo.substring(2, 4).toUpperCase();
+        System.out.println("🔍 Inferring program from roll prefix: " + prefix);
+
+        // MSc Integrated programs at PSG Tech (5-year, 10 semesters)
+        switch (prefix) {
+            case "PT":
+                return "M.Sc. Theoretical Computer Science";
+            case "PC":
+                return "M.Sc. Cyber Security";
+            case "PD":
+                return "M.Sc. Data Science";
+            case "PW":
+                return "M.Sc. Software Systems";
+            // Add more MSc department codes as needed
+        }
+
+        // Common B.E./B.Tech department codes
+        if (prefix.startsWith("C") || prefix.equals("CS"))
+            return "B.E. Computer Science";
+        if (prefix.startsWith("E") || prefix.equals("EC"))
+            return "B.E. Electronics";
+        if (prefix.equals("IT"))
+            return "B.Tech Information Technology";
+        if (prefix.startsWith("M") || prefix.equals("ME"))
+            return "B.E. Mechanical";
+
+        // Default fallback
+        return "B.E. (Inferred)";
+    }
+
+    /**
+     * Determine total semesters based on program type
+     */
+    private int determineTotalSemesters(String program) {
+        if (program == null || program.isEmpty())
+            return 8;
+
+        String upperProgram = program.toUpperCase();
+
+        // MSc Applied Mathematics - 4 semesters (2-year program) - check first
+        if (upperProgram.contains("M.SC") && upperProgram.contains("APPLIED MATH")) {
+            return 4;
+        }
+
+        // MSc Integrated 5-year programs - 10 semesters
+        // Includes: Theoretical Computer Science, Cyber Security, Data Science,
+        // Software Systems
+        if (upperProgram.contains("M.SC") || upperProgram.contains("MSC")) {
+            // Check for specific 5-year integrated programs
+            if (upperProgram.contains("THEORETICAL") ||
+                    upperProgram.contains("CYBER") ||
+                    upperProgram.contains("DATA SCIENCE") ||
+                    upperProgram.contains("SOFTWARE") ||
+                    upperProgram.contains("INTEGRATED") ||
+                    upperProgram.contains("5 YEAR") ||
+                    upperProgram.contains("5-YEAR")) {
+                return 10;
+            }
+            // If it's an MSc at PSG Tech (not Applied Math), it's likely integrated
+            // Default MSc to 10 semesters
+            return 10;
+        }
+
+        // MCA / MBA - typically 4 semesters
+        if (upperProgram.contains("MCA") || upperProgram.contains("MBA")) {
+            return 4;
+        }
+
+        // M.Tech / M.E. - typically 4 semesters
+        if (upperProgram.contains("M.TECH") || upperProgram.contains("M.E")) {
+            return 4;
+        }
+
+        // BE / BTech - 8 semesters (default for engineering)
+        if (upperProgram.contains("B.E") || upperProgram.contains("B.TECH") ||
+                upperProgram.contains("INFERRED")) {
+            return 8;
+        }
+
+        // Default to 8 semesters
+        return 8;
+    }
+
+    /**
      * Fetch and save internal marks
      * Note: Internal marks are only for the current semester
      */
@@ -155,7 +353,7 @@ public class ScraperService {
                 System.err.println("❌ Student record not found, cannot determine current semester");
                 return;
             }
-            
+
             int currentSemester = student.getCurrentSemester();
             System.out.println("📊 Fetching internal marks for current semester: " + currentSemester);
 
@@ -172,14 +370,16 @@ public class ScraperService {
             Element theoryTable = tables.get(1);
             Element tbody = theoryTable.selectFirst("tbody");
 
-            if (tbody == null) return;
+            if (tbody == null)
+                return;
 
             Elements rows = tbody.select("tr");
             int savedCount = 0;
 
             for (Element row : rows) {
                 Elements cells = row.select("td");
-                if (cells.size() < 2) continue;
+                if (cells.size() < 2)
+                    continue;
 
                 String courseCode = cells.get(0).text().trim();
 
@@ -193,7 +393,8 @@ public class ScraperService {
                     }
                 }
 
-                if (totalMarksStr.isEmpty()) continue;
+                if (totalMarksStr.isEmpty())
+                    continue;
 
                 try {
                     double totalMarks = Double.parseDouble(totalMarksStr);
@@ -222,7 +423,8 @@ public class ScraperService {
                 }
             }
 
-            System.out.println("✅ Internal marks saved for semester " + currentSemester + " (" + savedCount + " courses)");
+            System.out.println(
+                    "✅ Internal marks saved for semester " + currentSemester + " (" + savedCount + " courses)");
 
         } catch (IOException e) {
             System.err.println("❌ Failed to fetch internal marks: " + e.getMessage());
@@ -288,7 +490,8 @@ public class ScraperService {
                     String grade = "";
 
                     // Parse based on actual table structure
-                    // [0]=S.No, [1]=Code, [2]=Name, [3]=Category, [4]=Sem, [5]=Option, [6]=Grade, [7]=Credits, [8]=Year
+                    // [0]=S.No, [1]=Code, [2]=Name, [3]=Category, [4]=Sem, [5]=Option, [6]=Grade,
+                    // [7]=Credits, [8]=Year
                     if (cells.size() >= 8) {
                         courseCode = cells.get(1).text().trim();
                         courseName = cells.get(2).text().trim();
@@ -319,7 +522,8 @@ public class ScraperService {
 
                     // Validate semester
                     if (!semesterText.matches("\\d+")) {
-                        System.out.println("⚠️ Row " + i + ": Invalid semester '" + semesterText + "' for " + courseCode);
+                        System.out
+                                .println("⚠️ Row " + i + ": Invalid semester '" + semesterText + "' for " + courseCode);
                         failCount++;
                         continue;
                     }
@@ -355,7 +559,8 @@ public class ScraperService {
                     successCount++;
 
                     if (successCount <= 3) {
-                        System.out.println("✅ Saved: " + courseCode + " | Sem:" + semester + " | Credits:" + credits + " | Grade:" + grade);
+                        System.out.println("✅ Saved: " + courseCode + " | Sem:" + semester + " | Credits:" + credits
+                                + " | Grade:" + grade);
                     }
 
                 } catch (NumberFormatException e) {
@@ -387,7 +592,8 @@ public class ScraperService {
     private void calculateAndSaveCGPA() throws SQLException {
         List<Course> courses = databaseService.getCourses(currentRollNo);
 
-        if (courses.isEmpty()) return;
+        if (courses.isEmpty())
+            return;
 
         // Group courses by semester
         Map<Integer, List<Course>> coursesBySemester = new HashMap<>();
@@ -431,17 +637,43 @@ public class ScraperService {
     }
 
     /**
-     * Get completed semester
+     * Get current semester based on multiple data sources
+     * Priority: 1. Internal marks semester, 2. Highest course semester, 3. Results
+     * page
      */
     private int getCompletedSemester() {
         try {
+            // First, try to get semester from internal marks page (most accurate for
+            // current semester)
+            int internalMarksSemester = getInternalMarksSemester();
+            if (internalMarksSemester > 0) {
+                System.out.println("📊 Current semester from internal marks: " + internalMarksSemester);
+                return internalMarksSemester;
+            }
+
+            // Second, check the highest semester from courses already scraped
+            List<Course> courses = databaseService.getCourses(currentRollNo);
+            if (courses != null && !courses.isEmpty()) {
+                int maxCourseSem = courses.stream()
+                        .mapToInt(Course::getSemester)
+                        .max()
+                        .orElse(0);
+                if (maxCourseSem > 0) {
+                    // Current semester is max completed + 1 (if results are out)
+                    // But if internal marks exist, we're still in that semester
+                    System.out.println("📊 Max completed semester from courses: " + maxCourseSem);
+                    return maxCourseSem + 1; // Next semester is current
+                }
+            }
+
+            // Third, fallback to results page
             String resultsUrl = "https://ecampus.psgtech.ac.in/studzone2/FrmEpsStudResult.aspx";
             Document page = sessionManager.fetchStudzone2Page(resultsUrl);
 
             Element resultsTable = page.selectFirst("table#DgResult");
 
             if (resultsTable == null) {
-                return 1;
+                return 5; // Default to semester 5 if can't determine
             }
 
             Elements rows = resultsTable.select("tr");
@@ -449,24 +681,66 @@ public class ScraperService {
 
             for (int i = 1; i < rows.size(); i++) {
                 Elements cells = rows.get(i).select("td");
-                if (cells.size() < 6) continue;
+                if (cells.size() < 6)
+                    continue;
 
                 String semesterText = cells.get(0).text().trim();
-                if (!semesterText.isEmpty()) {
-                    lastSemester = Integer.parseInt(semesterText);
-                }
-
-                if (cells.get(5).text().trim().equals("RA")) {
-                    return lastSemester;
+                if (!semesterText.isEmpty() && semesterText.matches("\\d+")) {
+                    int sem = Integer.parseInt(semesterText);
+                    if (sem > lastSemester) {
+                        lastSemester = sem;
+                    }
                 }
             }
 
+            // Return next semester (current one being attempted)
             return lastSemester + 1;
 
         } catch (Exception e) {
             System.err.println("❌ Failed to get completed semester: " + e.getMessage());
-            return 1;
+            return 5; // Default to 5 instead of 1
         }
+    }
+
+    /**
+     * Get semester from internal marks page
+     */
+    private int getInternalMarksSemester() {
+        try {
+            String internalsUrl = "https://ecampus.psgtech.ac.in/studzone/ContinuousAssessment/CAMarksView";
+            Document page = sessionManager.fetchStudzone1Page(internalsUrl);
+
+            // Look for semester information in the page
+            // The internal marks page typically shows current semester data
+            Elements tables = page.select("table");
+
+            if (tables.size() >= 2) {
+                Element theoryTable = tables.get(1);
+                Element tbody = theoryTable.selectFirst("tbody");
+
+                if (tbody != null) {
+                    Elements rows = tbody.select("tr");
+                    if (rows.size() > 0) {
+                        // If internal marks exist, check course codes to determine semester
+                        Element firstRow = rows.first();
+                        Elements cells = firstRow.select("td");
+                        if (cells.size() > 0) {
+                            String courseCode = cells.get(0).text().trim();
+                            // Course codes like 23XT51 indicate semester 5
+                            if (courseCode.length() >= 5) {
+                                String semDigit = courseCode.substring(4, 5);
+                                if (semDigit.matches("\\d")) {
+                                    return Integer.parseInt(semDigit);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Silent fail, will use fallback
+        }
+        return 0;
     }
 
     /**

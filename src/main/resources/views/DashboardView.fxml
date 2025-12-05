@@ -23,11 +23,23 @@
                             <Font name="System Bold" size="28"/>
                         </font>
                     </Label>
-                    <Label text="Track your academic performance" styleClass="subtitle-label">
-                        <font>
-                            <Font size="13"/>
-                        </font>
-                    </Label>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Track your academic performance" styleClass="subtitle-label">
+                            <font>
+                                <Font size="13"/>
+                            </font>
+                        </Label>
+                        <Label text="•" styleClass="subtitle-label">
+                            <font>
+                                <Font size="13"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="lblProgram" text="Program: Loading..." styleClass="subtitle-label" style="-fx-font-weight: bold;">
+                            <font>
+                                <Font size="13"/>
+                            </font>
+                        </Label>
+                    </HBox>
                 </VBox>
 
                 <Region HBox.hgrow="ALWAYS"/>
@@ -100,11 +112,41 @@
                             <Font name="System Bold" size="36"/>
                         </font>
                     </Label>
-                    <Label text="Current Academic Semester" styleClass="stat-description">
+                    <Label fx:id="lblSemesterProgress" text="Current Academic Semester" styleClass="stat-description">
                         <font>
                             <Font size="11"/>
                         </font>
                     </Label>
+                </VBox>
+
+                <VBox spacing="8" styleClass="stat-card prediction-card" 
+                      style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2); -fx-background-radius: 12; -fx-cursor: hand;"
+                      onMouseClicked="#handleViewPrediction">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    <Label text="🎯 Predicted Final CGPA" styleClass="stat-label" style="-fx-text-fill: white;">
+                        <font>
+                            <Font size="13"/>
+                        </font>
+                    </Label>
+                    <Label fx:id="lblPredictedCGPA" text="--" styleClass="stat-value" style="-fx-text-fill: white;">
+                        <font>
+                            <Font name="System Bold" size="28"/>
+                        </font>
+                    </Label>
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label fx:id="lblPredictionTrend" text="Calculating..." styleClass="stat-description" style="-fx-text-fill: rgba(255,255,255,0.9);">
+                            <font>
+                                <Font size="11"/>
+                            </font>
+                        </Label>
+                        <Label text="• Click for details →" style="-fx-text-fill: rgba(255,255,255,0.7);">
+                            <font>
+                                <Font size="10"/>
+                            </font>
+                        </Label>
+                    </HBox>
                 </VBox>
             </HBox>
         </VBox>
@@ -136,7 +178,7 @@
                 <ComboBox fx:id="cmbSemesterSelector" prefWidth="220" style="-fx-font-size: 13px;"/>
             </HBox>
 
-            <TableView fx:id="tblCourses" VBox.vgrow="ALWAYS">
+            <TableView fx:id="tblCourses" VBox.vgrow="ALWAYS" prefHeight="500">
                 <columns>
                     <TableColumn fx:id="colCourseCode" text="Course Code" prefWidth="130"/>
                     <TableColumn fx:id="colCourseName" text="Course Name" prefWidth="380"/>
