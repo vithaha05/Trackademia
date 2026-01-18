@@ -130,6 +130,7 @@ public class DatabaseManager {
                             course_code VARCHAR(20) NOT NULL,
                             course_name VARCHAR(255),
                             total_internal_marks DOUBLE,
+                            attendance_percentage DOUBLE DEFAULT 0.0,
                             max_marks DOUBLE NOT NULL DEFAULT 50.0,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -139,6 +140,12 @@ public class DatabaseManager {
                         )
                     """;
             stmt.execute(createInternalMarksTable);
+            // Add attendance column if it doesn't exist (for existing tables)
+            try {
+                stmt.execute("ALTER TABLE internal_marks ADD COLUMN attendance_percentage DOUBLE DEFAULT 0.0");
+            } catch (SQLException e) {
+                /* Column already exists */ }
+
             System.out.println("✅ Table 'internal_marks' created/verified");
             // End Semester Marks table
             String createEndSemMarksTable = """
@@ -186,7 +193,9 @@ public class DatabaseManager {
                             roll_no VARCHAR(20),
                             semester INT NOT NULL,
                             course_code VARCHAR(20) NOT NULL,
+                            course_code VARCHAR(20) NOT NULL,
                             internal_marks DECIMAL(5,2),
+                            attendance_percentage DOUBLE DEFAULT 0.0,
                             endsem_marks DECIMAL(5,2),
                             final_marks DECIMAL(5,2),
                             class_average_internal DECIMAL(5,2),
@@ -199,6 +208,11 @@ public class DatabaseManager {
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                     """;
             stmt.execute(createMLDataTable);
+            try {
+                stmt.execute("ALTER TABLE ml_training_data ADD COLUMN attendance_percentage DOUBLE DEFAULT 0.0");
+            } catch (SQLException e) {
+                /* Column already exists */ }
+
             System.out.println("✅ Table 'ml_training_data' created/verified");
 
             // Performance Analytics table
@@ -265,8 +279,8 @@ public class DatabaseManager {
 
             String insertSql = """
                         INSERT INTO ml_training_data
-                        (roll_no, semester, course_code, internal_marks, endsem_marks, final_marks)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        (roll_no, semester, course_code, internal_marks, attendance_percentage, endsem_marks, final_marks)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         ON DUPLICATE KEY UPDATE internal_marks = VALUES(internal_marks)
                     """;
 
@@ -304,10 +318,16 @@ public class DatabaseManager {
                     // Internal marks (out of 50) - realistic distribution
                     double internalMarks = generateRealisticInternalMarks(random);
 
+                    // Attendance percentage (mostly high, 70-100)
+                    double attendance = 70 + (random.nextDouble() * 30);
+                    // Minimal attendance constraint
+                    if (random.nextDouble() < 0.05)
+                        attendance = 50 + (random.nextDouble() * 20); // Some low attendance
+
                     // End-sem marks correlate with internal but with noise
                     // Realistic correlation: students who do well in internal tend to do well in
                     // endsem
-                    double endsemMarks = generateCorrelatedEndsemMarks(internalMarks, random);
+                    double endsemMarks = generateCorrelatedEndsemMarks(internalMarks, attendance, random);
 
                     // Final marks = weighted average (typically 40% internal + 60% endsem scaled)
                     double finalMarks = (internalMarks / 50.0 * 40.0) + (endsemMarks / 100.0 * 60.0);
@@ -316,8 +336,9 @@ public class DatabaseManager {
                     pstmt.setInt(2, semester);
                     pstmt.setString(3, courseCode);
                     pstmt.setDouble(4, internalMarks);
-                    pstmt.setDouble(5, endsemMarks);
-                    pstmt.setDouble(6, finalMarks);
+                    pstmt.setDouble(5, attendance);
+                    pstmt.setDouble(6, endsemMarks);
+                    pstmt.setDouble(7, finalMarks);
                     pstmt.addBatch();
 
                     totalRecords++;
@@ -348,12 +369,21 @@ public class DatabaseManager {
     }
 
     /**
-     * Generate end-sem marks correlated with internal marks
+     * Generate end-sem marks correlated with internal marks and attendance
      * Correlation is not perfect - some students improve, others decline
      */
-    private double generateCorrelatedEndsemMarks(double internalMarks, java.util.Random random) {
+    private double generateCorrelatedEndsemMarks(double internalMarks, double attendance, java.util.Random random) {
         // Base prediction: scale internal to 100
         double expectedEndsem = (internalMarks / 50.0) * 100.0;
+
+        // Attendance factor: High attendance boosts score slightly, Low attendance acts
+        // as penalty
+        // Attendance below 75% often indicates trouble
+        if (attendance < 75) {
+            expectedEndsem -= (75 - attendance) * 0.5; // Penalty
+        } else {
+            expectedEndsem += (attendance - 75) * 0.1; // Slight bonus for consistency
+        }
 
         // Add realistic variation (standard deviation ~15)
         double noise = random.nextGaussian() * 15;

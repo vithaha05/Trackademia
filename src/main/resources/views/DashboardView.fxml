@@ -42,7 +42,19 @@
                     </HBox>
                 </VBox>
 
+                <Button text="Performance Insights" onAction="#handleOpenInsights" styleClass="nav-button">
+                    <HBox.margin>
+                        <Insets right="15"/>
+                    </HBox.margin>
+                </Button>
+
                 <Region HBox.hgrow="ALWAYS"/>
+                
+                <ToggleButton fx:id="btnThemeToggle" text="🌙 Dark Mode" styleClass="secondary-button" style="-fx-font-size: 13px; -fx-cursor: hand; -fx-background-radius: 20; -fx-padding: 8 16;">
+                   <HBox.margin>
+                       <Insets right="15"/>
+                   </HBox.margin>
+                </ToggleButton>
 
                 <Button fx:id="btnLogout" text="Logout" onAction="#handleLogout" styleClass="logout-button">
                     <font>

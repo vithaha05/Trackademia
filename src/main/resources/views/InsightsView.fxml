@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.psgtech.studentportal.controllers.InsightsController" 
+      spacing="20" styleClass="dashboard-root">
+    
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+
+    <!-- Header Section -->
+    <HBox alignment="CENTER_LEFT" spacing="20" styleClass="header-section">
+        <padding>
+            <Insets top="20" right="30" bottom="20" left="30"/>
+        </padding>
+        
+        <VBox>
+            <Label text="Performance Insights" styleClass="stat-value" style="-fx-font-size: 24px;"/>
+            <Label text="Deep dive into your academic trends and gaps" styleClass="subtitle-label"/>
+        </VBox>
+        
+        <Region HBox.hgrow="ALWAYS"/>
+        
+        <Button text="Back to Dashboard" onAction="#handleBack" styleClass="nav-button"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS">
+        <VBox spacing="20">
+            <HBox spacing="20" styleClass="content-section">
+                <!-- Theory vs Lab Chart -->
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="Theory vs Laboratory Impact" styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                    <BarChart fx:id="chartImpact" legendVisible="false" minHeight="300">
+                        <xAxis>
+                            <CategoryAxis label="Category"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Average GPA" autoRanging="false" lowerBound="0" upperBound="10" tickUnit="1"/>
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+                
+                <!-- Insights List -->
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS" minWidth="400">
+                    <Label text="AI Performance Analysis" styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                    <ListView fx:id="listInsights" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-color: transparent;"/>
+                </VBox>
+            </HBox>
+
+            <!-- Semester Trend Chart -->
+             <VBox styleClass="stat-card" VBox.vgrow="ALWAYS">
+                <Label text="Semester-wise Progression" styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <BarChart fx:id="chartTrend" legendVisible="false" minHeight="300">
+                     <xAxis>
+                        <CategoryAxis label="Semester"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="GPA" autoRanging="false" lowerBound="0" upperBound="10" tickUnit="1"/>
+                    </yAxis>
+                </BarChart>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

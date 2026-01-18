@@ -5,6 +5,7 @@ import com.psgtech.studentportal.services.DatabaseService;
 import com.psgtech.studentportal.services.CGPAPredictionService;
 import com.psgtech.studentportal.database.DatabaseManager;
 import com.psgtech.studentportal.utils.SessionManager;
+import com.psgtech.studentportal.utils.ThemeManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -62,14 +63,37 @@ public class DashboardController {
     private String rollNo;
     private List<Course> allCourses;
     private Map<Integer, CGPARecord> cgpaRecords;
+    private ThemeManager themeManager;
+    @FXML
+    private ToggleButton btnThemeToggle;
 
     @FXML
     public void initialize() {
         System.out.println("✅ Dashboard controller initialized");
         if (tblCourses != null) {
             tblCourses.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+            // Add row click listener for Analytics
+            tblCourses.setRowFactory(tv -> {
+                TableRow<Course> row = new TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2 && !row.isEmpty()) {
+                        handleCourseClick(row.getItem());
+                    }
+                });
+                return row;
+            });
         }
+
         sessionManager = SessionManager.getInstance();
+        themeManager = ThemeManager.getInstance();
+
+        // Initialize toggle button state
+        if (btnThemeToggle != null) {
+            btnThemeToggle.setSelected(themeManager.isDarkMode());
+            btnThemeToggle.setText(themeManager.isDarkMode() ? "☀️ Light Mode" : "🌙 Dark Mode");
+            btnThemeToggle.setOnAction(e -> toggleTheme());
+        }
     }
 
     public void initializeWithStudent(String studentRollNo) {
@@ -332,6 +356,35 @@ public class DashboardController {
         }
     }
 
+    private void handleCourseClick(Course course) {
+        try {
+            System.out.println("📊 Navigating to Analytics for " + course.getCourseCode());
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/CourseAnalyticsView.fxml"));
+            Parent root = loader.load();
+
+            CourseAnalyticsController controller = loader.getController();
+
+            // Get internal marks (we need to fetch this)
+            com.psgtech.studentportal.models.InternalMarks internal = databaseService.getInternalMarks(rollNo,
+                    course.getCourseCode());
+            double internalMarks = (internal != null && internal.getTotalInternalMarks() != null)
+                    ? internal.getTotalInternalMarks()
+                    : 0.0;
+
+            // Get attendance
+            double attendance = databaseService.getAttendance(rollNo, course.getCourseCode());
+
+            controller.initializeWithCourse(rollNo, course.getCourseCode(), course.getCourseName(),
+                    course.getSemester(), internalMarks, attendance);
+
+            Stage stage = (Stage) tblCourses.getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (IOException | SQLException e) {
+            e.printStackTrace();
+            showError("Failed to open analytics: " + e.getMessage());
+        }
+    }
+
     @FXML
     private void handleLogout() {
         try {
@@ -354,6 +407,47 @@ public class DashboardController {
             System.err.println("❌ Error loading login screen: " + e.getMessage());
             e.printStackTrace();
             showError("Failed to logout: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleOpenInsights() {
+        try {
+            System.out.println("📊 Navigating to Performance Insights...");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/InsightsView.fxml"));
+            Parent root = loader.load();
+
+            InsightsController controller = loader.getController();
+            controller.initializeWithStudent(rollNo);
+
+            Stage stage = (Stage) lblWelcome.getScene().getWindow();
+            Scene scene = new Scene(root, 1200, 800);
+
+            // Apply stylesheets and theme
+            scene.getStylesheets().add(getClass().getResource("/styles/style.css").toExternalForm());
+            themeManager.applyTheme(scene);
+
+            stage.setScene(scene);
+            stage.setTitle("Trackademia - Performance Insights");
+
+        } catch (IOException e) {
+            System.err.println("❌ Error loading insights: " + e.getMessage());
+            e.printStackTrace();
+            showError("Failed to open insights: " + e.getMessage());
+        }
+    }
+
+    private void toggleTheme() {
+        themeManager.toggleTheme();
+        boolean isDark = themeManager.isDarkMode();
+
+        if (btnThemeToggle != null) {
+            btnThemeToggle.setText(isDark ? "☀️ Light Mode" : "🌙 Dark Mode");
+        }
+
+        // Apply to current scene
+        if (lblWelcome.getScene() != null) {
+            themeManager.applyTheme(lblWelcome.getScene());
         }
     }
 

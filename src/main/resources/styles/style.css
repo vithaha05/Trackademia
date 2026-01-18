@@ -17,7 +17,7 @@
 }
 
 .gradient-background {
-    -fx-background-color: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    -fx-background-color: linear-gradient(to bottom right, #22c55e 0%, #16a34a 100%);
 }
 
 .login-container {
@@ -80,7 +80,7 @@
 }
 
 .primary-button {
-    -fx-background-color: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    -fx-background-color: linear-gradient(to bottom right, #22c55e 0%, #16a34a 100%);
     -fx-text-fill: #ffffff;
     -fx-background-radius: 10px;
     -fx-cursor: hand;
@@ -89,7 +89,7 @@
 }
 
 .primary-button:hover {
-    -fx-background-color: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    -fx-background-color: linear-gradient(to bottom right, #16a34a 0%, #15803d 100%);
     -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.5), 15, 0, 0, 4);
     -fx-scale-x: 1.02;
     -fx-scale-y: 1.02;
@@ -129,7 +129,7 @@
 }
 
 .top-bar {
-    -fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -fx-background-color: linear-gradient(to bottom right, #667eea 0%, #764ba2 100%);
     -fx-padding: 20px 30px;
 }
 
@@ -285,7 +285,7 @@
 
 /* Table Header Styling */
 .table-view .column-header {
-    -fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -fx-background-color: linear-gradient(to bottom right, #667eea 0%, #764ba2 100%);
     -fx-text-fill: #ffffff;
     -fx-font-weight: bold;
     -fx-font-size: 13px;
@@ -412,7 +412,7 @@
 
 /* Navigation Button Styling */
 .nav-button {
-    -fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -fx-background-color: linear-gradient(to bottom right, #667eea 0%, #764ba2 100%);
     -fx-text-fill: #ffffff;
     -fx-background-radius: 8px;
     -fx-cursor: hand;
@@ -421,7 +421,7 @@
 }
 
 .nav-button:hover {
-    -fx-background-color: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    -fx-background-color: linear-gradient(to bottom right, #5568d3 0%, #6a3f8f 100%);
     -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.4), 12, 0, 0, 3);
     -fx-scale-x: 1.05;
     -fx-scale-y: 1.05;
@@ -453,4 +453,52 @@
 /* Smooth Transitions */
 * {
     -fx-transition-duration: 0.2s;
+}
+
+/* ============================================
+   CHART STYLING (Data Scientist Theme)
+   ============================================ */
+.default-color0.chart-bar {
+    -fx-bar-fill: linear-gradient(from 0% 0% to 0% 100%, #6a11cb 0%, #2575fc 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #6a11cb 0%, #2575fc 100%);
+}
+
+.default-color1.chart-bar {
+    -fx-bar-fill: linear-gradient(from 0% 0% to 0% 100%, #f093fb 0%, #f5576c 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #f093fb 0%, #f5576c 100%);
+}
+
+.default-color2.chart-bar {
+    -fx-bar-fill: linear-gradient(from 0% 0% to 0% 100%, #4facfe 0%, #00f2fe 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #4facfe 0%, #00f2fe 100%);
+}
+
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+.chart-content {
+    -fx-padding: 10px;
+}
+
+.chart-vertical-grid-lines {
+    -fx-stroke: rgba(128, 128, 128, 0.1);
+}
+
+.chart-horizontal-grid-lines {
+    -fx-stroke: rgba(128, 128, 128, 0.1);
+}
+
+.chart-legend {
+    -fx-background-color: transparent;
+}
+
+.axis {
+    -fx-tick-label-fill: #7f8c8d;
+    -fx-tick-label-font-size: 11px;
+}
+
+.axis-label {
+    -fx-text-fill: #2c3e50;
+    -fx-font-weight: bold;
 }

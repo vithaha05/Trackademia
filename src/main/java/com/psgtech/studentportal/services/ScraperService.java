@@ -60,8 +60,10 @@ public class ScraperService {
         // Fetch and save data
         try {
             fetchAndSaveStudentInfo();
+            fetchAndSaveStudentInfo();
             fetchAndSaveCourses(); // Fetch courses first to match course names
             fetchAndSaveInternalMarks(); // Then fetch internal marks with proper course names
+            fetchAndSaveAttendance(); // Fetch attendance
             System.out.println("✅ All data scraped and saved successfully!");
             return true;
         } catch (Exception e) {
@@ -432,6 +434,87 @@ public class ScraperService {
     }
 
     /**
+     * Fetch and save attendance percentage
+     */
+    private void fetchAndSaveAttendance() throws SQLException {
+        try {
+            System.out.println("📊 Fetching attendance data...");
+            String attendanceUrl = "https://ecampus.psgtech.ac.in/studzone/Attendance/StudentPercentage";
+            Document page = sessionManager.fetchStudzone1Page(attendanceUrl);
+
+            // The attendance page usually has a table with course code, name, and
+            // percentage
+            Elements tables = page.select("table");
+            if (tables.isEmpty()) {
+                System.err.println("❌ No tables found on attendance page");
+                return;
+            }
+
+            // Iterate through tables to find the one with attendance data
+            // Usually it's the second table or one with specific headers
+            for (Element table : tables) {
+                Elements rows = table.select("tr");
+                if (rows.size() < 2)
+                    continue;
+
+                // Check header to verify it's the attendance table
+                String headerText = rows.get(0).text().toLowerCase();
+                if (!headerText.contains("code") || !headerText.contains("perc")) {
+                    continue;
+                }
+
+                int savedCount = 0;
+                for (int i = 1; i < rows.size(); i++) {
+                    Elements cells = rows.get(i).select("td");
+                    if (cells.size() < 3)
+                        continue;
+
+                    String courseCode = cells.get(0).text().trim();
+                    // Some tables might have S.No as first column
+                    if (courseCode.matches("\\d+") && cells.size() > 3) {
+                        courseCode = cells.get(1).text().trim();
+                    }
+
+                    // Find the percentage column (usually the last or near last)
+                    // Look for cell with % symbol
+                    String percentageStr = "";
+                    for (int j = cells.size() - 1; j >= 0; j--) {
+                        String text = cells.get(j).text().trim();
+                        if (text.endsWith("%") || text.matches("\\d+(\\.\\d+)?")) {
+                            // verify it's a number
+                            String numPart = text.replace("%", "").trim();
+                            if (numPart.matches("\\d+(\\.\\d+)?")) {
+                                percentageStr = numPart;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!percentageStr.isEmpty() && !courseCode.isEmpty()) {
+                        try {
+                            double percentage = Double.parseDouble(percentageStr);
+                            databaseService.updateAttendance(currentRollNo, courseCode, percentage);
+                            savedCount++;
+                            System.out.println("✅ Attendance for " + courseCode + ": " + percentage + "%");
+                        } catch (NumberFormatException e) {
+                            // Ignore parse errors
+                        }
+                    }
+                }
+
+                if (savedCount > 0) {
+                    System.out.println("✅ Saved attendance for " + savedCount + " courses");
+                    return; // Stop after finding the valid table
+                }
+            }
+            System.out.println("⚠️ Could not find valid attendance data in any table");
+
+        } catch (IOException e) {
+            System.err.println("❌ Failed to fetch attendance: " + e.getMessage());
+        }
+    }
+
+    /**
      * Fetch and save courses with grades - ENHANCED WITH DEBUGGING
      */
     private void fetchAndSaveCourses() throws SQLException {
@@ -643,15 +726,29 @@ public class ScraperService {
      */
     private int getCompletedSemester() {
         try {
-            // First, try to get semester from internal marks page (most accurate for
-            // current semester)
-            int internalMarksSemester = getInternalMarksSemester();
-            if (internalMarksSemester > 0) {
-                System.out.println("📊 Current semester from internal marks: " + internalMarksSemester);
-                return internalMarksSemester;
+            // Priority 1: Check Results Page (Source of truth for completed semesters)
+            // If results for Sem 5 are out, then Sem 5 is completed. Current is 6.
+            int maxResultSem = getMaxSemesterFromResults();
+            System.out.println("📊 Max semester from results page: " + maxResultSem);
+
+            // Priority 2: Check Internal Marks Page (Source of truth for CURRENT ongoing
+            // semester)
+            // If marks for Sem 6 are visible, we are definitely in Sem 6.
+            int internalMarksSem = getInternalMarksSemester();
+            System.out.println("📊 Semester from internal marks: " + internalMarksSem);
+
+            if (internalMarksSem > 0) {
+                // If we see internal marks for Sem X, we are in Sem X.
+                return internalMarksSem;
             }
 
-            // Second, check the highest semester from courses already scraped
+            if (maxResultSem > 0) {
+                // If internal marks not yet up, but results for Sem X are out,
+                // we are likely in Sem X+1.
+                return maxResultSem + 1;
+            }
+
+            // Priority 3: Fallback to database (only if scraping both failed)
             List<Course> courses = databaseService.getCourses(currentRollNo);
             if (courses != null && !courses.isEmpty()) {
                 int maxCourseSem = courses.stream()
@@ -659,46 +756,49 @@ public class ScraperService {
                         .max()
                         .orElse(0);
                 if (maxCourseSem > 0) {
-                    // Current semester is max completed + 1 (if results are out)
-                    // But if internal marks exist, we're still in that semester
-                    System.out.println("📊 Max completed semester from courses: " + maxCourseSem);
-                    return maxCourseSem + 1; // Next semester is current
+                    System.out.println("📊 Max completed semester from DB history: " + maxCourseSem);
+                    // Assume next semester is current
+                    return maxCourseSem + 1;
                 }
             }
 
-            // Third, fallback to results page
+            return 1; // Default fallback
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to get completed semester: " + e.getMessage());
+            return 1;
+        }
+    }
+
+    /**
+     * Get max semester from results page
+     */
+    private int getMaxSemesterFromResults() {
+        try {
             String resultsUrl = "https://ecampus.psgtech.ac.in/studzone2/FrmEpsStudResult.aspx";
             Document page = sessionManager.fetchStudzone2Page(resultsUrl);
 
             Element resultsTable = page.selectFirst("table#DgResult");
-
-            if (resultsTable == null) {
-                return 5; // Default to semester 5 if can't determine
-            }
+            if (resultsTable == null)
+                return 0;
 
             Elements rows = resultsTable.select("tr");
-            int lastSemester = 1;
+            int maxSem = 0;
 
             for (int i = 1; i < rows.size(); i++) {
                 Elements cells = rows.get(i).select("td");
-                if (cells.size() < 6)
-                    continue;
-
-                String semesterText = cells.get(0).text().trim();
-                if (!semesterText.isEmpty() && semesterText.matches("\\d+")) {
-                    int sem = Integer.parseInt(semesterText);
-                    if (sem > lastSemester) {
-                        lastSemester = sem;
+                if (cells.size() > 0) {
+                    String semesterText = cells.get(0).text().trim();
+                    if (semesterText.matches("\\d+")) {
+                        int sem = Integer.parseInt(semesterText);
+                        if (sem > maxSem)
+                            maxSem = sem;
                     }
                 }
             }
-
-            // Return next semester (current one being attempted)
-            return lastSemester + 1;
-
+            return maxSem;
         } catch (Exception e) {
-            System.err.println("❌ Failed to get completed semester: " + e.getMessage());
-            return 5; // Default to 5 instead of 1
+            return 0;
         }
     }
 

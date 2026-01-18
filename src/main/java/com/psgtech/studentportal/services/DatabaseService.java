@@ -78,6 +78,66 @@ public class DatabaseService {
             stmt.setDouble(6, internal.getMaxMarks());
             stmt.executeUpdate();
         }
+
+    }
+
+    /**
+     * Update attendance percentage for a course
+     */
+    public void updateAttendance(String rollNo, String courseCode, double percentage) throws SQLException {
+        String sql = """
+                    UPDATE internal_marks
+                    SET attendance_percentage = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE roll_no = ? AND course_code = ?
+                """;
+
+        try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
+            stmt.setDouble(1, percentage);
+            stmt.setString(2, rollNo);
+            stmt.setString(3, courseCode);
+            int rows = stmt.executeUpdate();
+
+            if (rows == 0) {
+                // If marks implementation update failed, it might mean the record doesn't exist
+                // yet
+                // We should try to insert just the attendance
+                // However, usually we fetch marks first. If no marks, we might want to insert a
+                // record with null marks
+                System.out.println("⚠️ No internal marks record found for " + courseCode
+                        + " to update attendance. Creating new record.");
+                saveAttendanceOnly(rollNo, courseCode, percentage);
+            }
+        }
+    }
+
+    /**
+     * Save attendance only (when marks not yet available)
+     */
+    private void saveAttendanceOnly(String rollNo, String courseCode, double percentage) throws SQLException {
+        String sql = """
+                    INSERT INTO internal_marks
+                    (roll_no, semester, course_code, attendance_percentage)
+                    VALUES (?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        attendance_percentage = VALUES(attendance_percentage),
+                        updated_at = CURRENT_TIMESTAMP
+                """;
+
+        // We need to determine semester. For now, we'll try to find it from courses
+        // table or default to current
+        // optimized: just use a placeholder semester (e.g., 0) or fetch from student
+        // For simplicity in this fix, we'll fetch student's current semester
+        Student s = getStudent(rollNo);
+        int semester = (s != null) ? s.getCurrentSemester() : 0;
+
+        try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
+            stmt.setString(1, rollNo);
+            stmt.setInt(2, semester);
+            stmt.setString(3, courseCode);
+            stmt.setDouble(4, percentage);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -428,5 +488,61 @@ public class DatabaseService {
         }
 
         return null;
+    }
+
+    /**
+     * Get internal marks for a specific course
+     */
+    public InternalMarks getInternalMarks(String rollNo, String courseCode) throws SQLException {
+        String sql = "SELECT * FROM internal_marks WHERE roll_no = ? AND course_code = ?";
+
+        try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
+            stmt.setString(1, rollNo);
+            stmt.setString(2, courseCode);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                InternalMarks internal = new InternalMarks();
+                internal.setId(rs.getInt("id"));
+                internal.setRollNo(rs.getString("roll_no"));
+                internal.setSemester(rs.getInt("semester"));
+                internal.setCourseCode(rs.getString("course_code"));
+                internal.setCourseName(rs.getString("course_name"));
+
+                double totalMarks = rs.getDouble("total_internal_marks");
+                if (!rs.wasNull()) {
+                    internal.setTotalInternalMarks(totalMarks);
+                }
+
+                internal.setMaxMarks(rs.getDouble("max_marks"));
+                rs.close();
+                return internal;
+            }
+            rs.close();
+        }
+        return null;
+    }
+
+    /**
+     * Get attendance percentage for a specific course
+     */
+    public double getAttendance(String rollNo, String courseCode) throws SQLException {
+        String sql = "SELECT attendance_percentage FROM internal_marks WHERE roll_no = ? AND course_code = ?";
+
+        try (PreparedStatement stmt = dbManager.getConnection().prepareStatement(sql)) {
+            stmt.setString(1, rollNo);
+            stmt.setString(2, courseCode);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                double attendance = rs.getDouble("attendance_percentage");
+                if (rs.wasNull())
+                    attendance = 0.0;
+                rs.close();
+                return attendance;
+            }
+            rs.close();
+        }
+        return 0.0;
     }
 }

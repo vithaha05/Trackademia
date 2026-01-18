@@ -260,9 +260,19 @@ public class CGPAPredictionService {
         double lastCGPA = currentCGPA;
         double avgGPA = semesterGPAs.stream().mapToDouble(Double::doubleValue).average().orElse(currentCGPA);
 
+        // Check for MSc Internship Heuristic
+        boolean isMSc = details.getProgram() != null && details.getProgram().toUpperCase().contains("MSC");
+
         for (int sem = maxSemester + 1; sem <= totalSemesters; sem++) {
-            // Project future GPA with dampening toward average
-            double projectedGPA = predictFutureGPA(semesterGPAs, avgGPA, sem, maxSemester);
+            double projectedGPA;
+
+            // Apply MSc Heuristic: Internship Semesters (7 & 10) usually get ~9.5
+            if (isMSc && (sem == 7 || sem == 10)) {
+                projectedGPA = 9.5;
+            } else {
+                // Project future GPA with dampening toward average
+                projectedGPA = predictFutureGPA(semesterGPAs, avgGPA, sem, maxSemester);
+            }
 
             // Calculate projected CGPA (weighted by credits assumed equal)
             int projectedCredits = cumulativeCredits + (sem - maxSemester) * 20; // ~20 credits per sem

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.shape.Circle?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.psgtech.studentportal.controllers.CourseAnalyticsController"
+            stylesheets="@../styles/style.css">
+
+    <top>
+        <HBox styleClass="header-section" alignment="CENTER_LEFT" spacing="20">
+            <padding>
+                <Insets top="15" right="20" bottom="15" left="20"/>
+            </padding>
+            <Button text="← Back to Dashboard" onAction="#handleBack" styleClass="secondary-button"/>
+            <VBox>
+                <Label fx:id="lblCourseName" text="Course Analytics" styleClass="page-title"/>
+                <Label fx:id="lblCourseCode" text="CODE123" style="-fx-text-fill: white; -fx-opacity: 0.8;"/>
+            </VBox>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true">
+            <VBox spacing="20">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20"/>
+                </padding>
+
+                <!-- Top Row: Key Metrics -->
+                <HBox spacing="20">
+                    <VBox styleClass="card" HBox.hgrow="ALWAYS" alignment="CENTER">
+                        <Label text="Current Internal Marks"/>
+                        <Label fx:id="lblInternalMarks" text="45/50" styleClass="metric-value"/>
+                    </VBox>
+                    <VBox styleClass="card" HBox.hgrow="ALWAYS" alignment="CENTER">
+                        <Label text="Attendance"/>
+                        <Label fx:id="lblAttendance" text="85%" styleClass="metric-value"/>
+                    </VBox>
+                    <VBox styleClass="card" HBox.hgrow="ALWAYS" alignment="CENTER">
+                        <Label text="Class Percentile"/>
+                        <Label fx:id="lblPercentile" text="Top 10%" styleClass="metric-value"/>
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="20">
+                    <!-- Left: Attendance Sensitivity Chart -->
+                    <VBox styleClass="card" HBox.hgrow="ALWAYS" minWidth="400">
+                        <Label text="Impact of Attendance on End Semester Score" styleClass="section-header"/>
+                        <Label text="How your predicted score changes with attendance (ML Model)" 
+                               style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                        <LineChart fx:id="chartSensitivity">
+                            <xAxis>
+                                <NumberAxis label="Attendance %" lowerBound="50" upperBound="100" tickUnit="5"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Predicted Score" lowerBound="0" upperBound="100"/>
+                            </yAxis>
+                        </LineChart>
+                    </VBox>
+
+                    <!-- Right: Risk & Advice -->
+                    <VBox spacing="15" HBox.hgrow="NEVER" minWidth="300" maxWidth="350">
+                         <VBox styleClass="card">
+                            <Label text="Risk Assessment" styleClass="section-header"/>
+                            <HBox alignment="CENTER_LEFT" spacing="15">
+                                <Circle fx:id="riskIndicator" radius="10" fill="GREEN"/>
+                                <Label fx:id="lblRiskLevel" text="Low Risk" style="-fx-font-weight: bold;"/>
+                            </HBox>
+                            <Label fx:id="lblImprovement" text="No improvement needed." wrapText="true" style="-fx-padding: 10 0 0 0;"/>
+                         </VBox>
+
+                         <VBox styleClass="card" VBox.vgrow="ALWAYS">
+                            <Label text="AI Recommendation" styleClass="section-header"/>
+                            <Label fx:id="lblRecommendation" text="Loading..." wrapText="true"/>
+                         </VBox>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

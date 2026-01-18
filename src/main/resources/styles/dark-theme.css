@@ -1,0 +1,135 @@
+/* ============================================
+   TRACADEMIA - DARK THEME
+   ============================================ */
+
+/* Root Overrides */
+.root {
+    -fx-base: #1e1e1e;
+    -fx-background: #1e1e1e;
+    -fx-control-inner-background: #2d2d2d;
+    -fx-control-inner-background-alt: #252525;
+}
+
+/* Backgrounds */
+.login-root,
+.dashboard-root,
+.scroll-bar,
+.scroll-bar .track {
+    -fx-background-color: #121212;
+}
+
+.login-card,
+.stat-card,
+.filter-section,
+.combo-box-popup .list-view,
+.combo-box-popup .list-cell,
+#tblCourses,
+.table-row-cell,
+#tblAnalytics {
+    -fx-background-color: #1e1e1e;
+}
+
+.header-section {
+    -fx-background-color: #1a1a1a;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 15, 0, 0, 2);
+}
+
+/* Text Colors */
+.field-label,
+.stat-value,
+.section-title,
+.filter-label,
+.label,
+#lblAnalyticsTitle,
+.combo-box-popup .list-cell {
+    -fx-text-fill: #e0e0e0;
+}
+
+.app-subtitle,
+.info-text,
+.footer-text,
+.stat-label,
+.stat-description {
+    -fx-text-fill: #a0a0a0;
+}
+
+/* Inputs & Tables */
+.modern-input,
+.text-field,
+.password-field,
+#cmbSemesterSelector {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #404040;
+}
+
+.modern-input:focused,
+.text-field:focused,
+.password-field:focused,
+#cmbSemesterSelector:focused {
+    -fx-background-color: #333333;
+    -fx-border-color: #667eea;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #252525;
+}
+
+.table-row-cell:hover,
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+}
+
+.table-row-cell:selected,
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: #3d3d3d;
+    -fx-text-background-color: #ffffff;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #ffffff;
+}
+
+/* Specific Component Fixes */
+.logout-button {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-border-color: rgba(255, 255, 255, 0.2);
+}
+
+.logout-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #404040;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #505050;
+}
+
+/* Chart Overrides for Dark Mode */
+.axis {
+    -fx-tick-label-fill: #a0a0a0;
+}
+
+.axis-label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.chart-vertical-grid-lines {
+    -fx-stroke: rgba(255, 255, 255, 0.1);
+}
+
+.chart-horizontal-grid-lines {
+    -fx-stroke: rgba(255, 255, 255, 0.1);
+}
+
+.chart-legend-item-symbol {
+    -fx-background-radius: 4px;
+}
+
+.chart-legend-item {
+    -fx-text-fill: #e0e0e0;
+}
